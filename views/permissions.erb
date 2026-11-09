@@ -1,0 +1,13 @@
+<a class="back" href="/">← Catalogue</a>
+<section class="service-intro"><p class="eyebrow">ACCESS ADMINISTRATION</p><h1>Permissions.</h1><p class="lede">Scope: <code><%= h(@scope) %></code></p><p>Signing in grants no write access. Global add permission can create aliases. A service grant applies only to that existing alias.</p></section>
+<section><div class="section-heading"><h2>Explicit grants</h2><span class="count"><%= @grants.size %> capabilities</span></div>
+<% @grants.each do |grant| %><article class="grant"><div><strong><%= h(grant[:action]) %></strong><span class="badge"><%= h(grant[:kind]) %></span><p><code><%= h(grant[:issuer]) %></code><br>Subject / repository ID: <%= h(grant[:subject]) %></p></div><form method="post" action="/permissions/<%= grant[:id] %>/delete"><%= csrf %><button class="quiet">Revoke</button></form></article><% end %>
+</section>
+<section class="panel"><h2>Grant access</h2><p>Workload subjects are the trusted issuer's configured repository claim. Any accepted build identity for that repository receives these rights, including pull-request builds.</p>
+<form method="post" action="/permissions" class="stack"><%= csrf %><input type="hidden" name="scope" value="<%= h(@scope) %>">
+  <label>Identity type<select name="kind"><option value="human">Human</option><option value="workload">Workload repository</option></select></label>
+  <label>Trusted issuer<input name="issuer" type="url" required maxlength="512" placeholder="https://identity.example.test"></label>
+  <label>Subject / immutable repository ID<input name="subject" required maxlength="256"></label>
+  <fieldset><legend>Capabilities</legend><% ReleaseMirror::Store::ACTIONS.each do |action| %><label class="check"><input type="checkbox" name="actions[]" value="<%= action %>"><%= action.capitalize %></label><% end %></fieldset>
+  <p class="note">Admin can manage grants and all catalogue operations within this scope.</p><button>Save permissions ↗</button>
+</form></section>

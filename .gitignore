@@ -1,0 +1,7 @@
+/.bundle/
+/vendor/
+/data/
+/tmp/
+/.env
+/config/local.json
+/node_modules/

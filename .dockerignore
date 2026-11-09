@@ -1,0 +1,9 @@
+.git
+.bundle
+.env
+data
+tmp
+vendor
+node_modules
+config/local.json
+test

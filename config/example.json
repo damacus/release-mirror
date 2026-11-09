@@ -1,0 +1,30 @@
+{
+  "publicUrl": "https://catalogue.example.test",
+  "databasePath": "/data/catalogue.sqlite3",
+  "sessionSecretEnv": "SESSION_SECRET",
+  "bootstrap": {"kind": "human", "issuer": "https://identity.example.test", "subject": "replace-with-explicit-user-id"},
+  "workloadIssuers": [
+    {
+      "issuer": "https://forge.example.test/api/actions",
+      "audience": "release-catalogue",
+      "jwksUri": "https://forge.example.test/api/actions/.well-known/keys",
+      "algorithms": ["RS256"],
+      "tokenType": "JWT",
+      "repositoryClaim": "repository_id",
+      "maxLifetime": 3600
+    }
+  ],
+  "humanApi": {
+    "issuer": "https://identity.example.test",
+    "audience": "replace-with-api-audience",
+    "introspectionUri": "https://identity.example.test/oauth/v2/introspect",
+    "clientId": "replace-with-api-client-id",
+    "clientSecretEnv": "API_CLIENT_SECRET"
+  },
+  "browserOidc": {
+    "issuer": "https://identity.example.test",
+    "clientId": "replace-with-browser-client-id",
+    "clientSecretEnv": "BROWSER_CLIENT_SECRET",
+    "signingAlgorithm": "RS256"
+  }
+}

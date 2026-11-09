@@ -1,0 +1,5 @@
+{
+  "publicUrl": "http://localhost:9292",
+  "databasePath": "data/catalogue.sqlite3",
+  "sessionSecretEnv": "SESSION_SECRET"
+}

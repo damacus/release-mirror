@@ -1,0 +1,315 @@
+openapi: 3.1.0
+info:
+  title: Release Mirror
+  version: 1.0.0
+  description: Public container metadata. No registry access, source metadata or image uploads. All errors omit rejected values.
+servers:
+  - url: https://catalogue.example.test
+security: []
+paths:
+  /health:
+    get:
+      operationId: health
+      responses:
+        '200':
+          description: Process is responding
+  /api/v1/services:
+    get:
+      operationId: listServices
+      responses:
+        '200':
+          description: Public service aliases
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [services]
+                properties:
+                  services:
+                    type: array
+                    items: {$ref: '#/components/schemas/Alias'}
+    post:
+      operationId: createService
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [name]
+              properties:
+                name: {$ref: '#/components/schemas/Alias'}
+      responses:
+        '201': {description: Created; requires global add permission}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/services/{service}:
+    parameters: [{$ref: '#/components/parameters/Service'}]
+    delete:
+      operationId: deleteService
+      security: [{bearerAuth: []}]
+      responses:
+        '204': {description: Alias, live releases and scoped grants deleted; upstream images unaffected}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/services/{service}/releases:
+    parameters: [{$ref: '#/components/parameters/Service'}]
+    get:
+      operationId: listReleases
+      responses:
+        '200':
+          description: All current tags; Cache-Control public, max-age=0, must-revalidate
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [service, releases]
+                properties:
+                  service: {$ref: '#/components/schemas/Alias'}
+                  releases:
+                    type: array
+                    items: {$ref: '#/components/schemas/Release'}
+        default: {$ref: '#/components/responses/Error'}
+    post:
+      operationId: publishReleases
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Publication'}
+      responses:
+        '200':
+          description: Atomically added/edited tags; add for new tags, edit for existing tags
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [releases]
+                properties:
+                  releases:
+                    type: array
+                    items: {$ref: '#/components/schemas/Release'}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/services/{service}/releases/{tag}:
+    parameters:
+      - {$ref: '#/components/parameters/Service'}
+      - name: tag
+        in: path
+        required: true
+        schema: {$ref: '#/components/schemas/Tag'}
+    get:
+      operationId: getRelease
+      responses:
+        '200':
+          description: Current release entry
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Release'}
+        default: {$ref: '#/components/responses/Error'}
+    delete:
+      operationId: deleteRelease
+      security: [{bearerAuth: []}]
+      responses:
+        '204': {description: Live entry removed completely; no tombstone or unyank}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/services/{service}/renovate:
+    parameters: [{$ref: '#/components/parameters/Service'}]
+    get:
+      operationId: renovateReleases
+      responses:
+        '200':
+          description: Custom datasource feed; version is the exact tag, digest includes algorithm
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [releases]
+                properties:
+                  releases:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: false
+                      required: [version, digest, releaseTimestamp]
+                      properties:
+                        version: {$ref: '#/components/schemas/Tag'}
+                        digest: {$ref: '#/components/schemas/Digest'}
+                        releaseTimestamp: {type: string, format: date-time}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/export:
+    get:
+      operationId: exportCatalogue
+      responses:
+        '200':
+          description: Public metadata snapshot. Excludes credentials, grants and private immutable policy.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Snapshot'}
+  /api/v1/import:
+    post:
+      operationId: importCatalogue
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Snapshot'}
+      responses:
+        '204': {description: Atomic merge with normal per-entry permissions; new entries retain input timestamps, existing timestamps stay server-managed}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/grants:
+    get:
+      operationId: listGrants
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: scope
+          in: query
+          schema: {type: string, default: '*'}
+      responses:
+        '200': {description: Grants for the requested scope; requires admin in that scope}
+        default: {$ref: '#/components/responses/Error'}
+    post:
+      operationId: addGrant
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [identity, scope, actions]
+              properties:
+                identity: {$ref: '#/components/schemas/Identity'}
+                scope: {oneOf: [{$ref: '#/components/schemas/Alias'}, {const: '*'}]}
+                actions:
+                  type: array
+                  minItems: 1
+                  maxItems: 4
+                  uniqueItems: true
+                  items: {enum: [add, edit, delete, admin]}
+      responses:
+        '204': {description: Granted; scoped admin cannot grant globally or to another service}
+        default: {$ref: '#/components/responses/Error'}
+  /api/v1/grants/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: {type: integer, minimum: 1}
+    delete:
+      operationId: revokeGrant
+      security: [{bearerAuth: []}]
+      responses:
+        '204': {description: Grant revoked immediately; requires admin in that grant's scope}
+        default: {$ref: '#/components/responses/Error'}
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Trusted workload identity token or introspected human access token. Browser ID tokens are not API credentials.
+  parameters:
+    Service:
+      name: service
+      in: path
+      required: true
+      schema: {$ref: '#/components/schemas/Alias'}
+  responses:
+    Error:
+      description: 'Generic error. 400 malformed JSON; 401 invalid/missing credential; 403 denied; 404 absent; 409 conflict; 413 too large; 415 content type; 422 validation; 503 identity provider unavailable.'
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            required: [error]
+            properties:
+              error: {type: string}
+  schemas:
+    Alias: {type: string, maxLength: 64, pattern: '^[a-z0-9][a-z0-9_-]{0,63}$'}
+    Tag: {type: string, maxLength: 128, pattern: '^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$'}
+    Digest: {type: string, maxLength: 135, pattern: '^(sha256:[a-f0-9]{64}|sha384:[a-f0-9]{96}|sha512:[a-f0-9]{128})$'}
+    Platform:
+      type: object
+      additionalProperties: false
+      required: [os, architecture]
+      properties:
+        os: {$ref: '#/components/schemas/PlatformComponent'}
+        architecture: {$ref: '#/components/schemas/PlatformComponent'}
+        variant: {$ref: '#/components/schemas/PlatformComponent'}
+        os.version: {$ref: '#/components/schemas/PlatformComponent'}
+        os.features:
+          type: array
+          maxItems: 16
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/PlatformComponent'}
+    PlatformComponent: {type: string, maxLength: 64, pattern: '^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$'}
+    Platforms:
+      type: array
+      minItems: 1
+      maxItems: 32
+      uniqueItems: true
+      items: {$ref: '#/components/schemas/Platform'}
+    Publication:
+      type: object
+      additionalProperties: false
+      required: [platforms]
+      description: Explicit tags and digest or a full reference carrying them. Supplied reference tag must occur in tags; supplied digests must agree. Registry/name is discarded and never returned. At most 1 MiB per request.
+      allOf:
+        - anyOf: [{required: [tags]}, {required: [reference]}]
+        - anyOf: [{required: [digest]}, {required: [reference]}]
+      properties:
+        tags:
+          type: array
+          minItems: 1
+          maxItems: 32
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/Tag'}
+        digest: {$ref: '#/components/schemas/Digest'}
+        platforms: {$ref: '#/components/schemas/Platforms'}
+        reference: {type: string, maxLength: 512, description: 'Container reference name[:tag][@digest], no transport URL or credentials. Name at most 255 bytes. Requires a tag or digest; never retained.'}
+        immutable: {type: boolean, default: false, description: Private producer policy; permanently fixes image/platforms for these actual tags. Not published or included in public export.}
+    Release:
+      type: object
+      additionalProperties: false
+      required: [service, version, digest, platforms, publishedAt, updatedAt]
+      properties:
+        service: {$ref: '#/components/schemas/Alias'}
+        version: {$ref: '#/components/schemas/Tag'}
+        digest: {$ref: '#/components/schemas/Digest'}
+        platforms: {$ref: '#/components/schemas/Platforms'}
+        publishedAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    Snapshot:
+      type: object
+      additionalProperties: false
+      required: [schemaVersion, services]
+      properties:
+        schemaVersion: {const: 1}
+        services:
+          type: array
+          maxItems: 1000
+          items:
+            type: object
+            additionalProperties: false
+            required: [name, releases]
+            properties:
+              name: {$ref: '#/components/schemas/Alias'}
+              releases:
+                type: array
+                maxItems: 10000
+                items: {$ref: '#/components/schemas/Release'}
+    Identity:
+      type: object
+      additionalProperties: false
+      required: [kind, issuer, subject]
+      properties:
+        kind: {enum: [human, workload]}
+        issuer: {type: string, maxLength: 512, pattern: '^https://[^\s?#]+$'}
+        subject: {type: string, minLength: 1, maxLength: 256, description: 'OIDC subject for humans; configured immutable repository claim for workloads.'}

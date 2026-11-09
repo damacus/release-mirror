@@ -1,0 +1,24 @@
+<section class="intro">
+  <p class="eyebrow">THE PUBLIC CATALOGUE</p>
+  <h1>Know what<br>shipped.</h1>
+  <p class="lede">Container tags, digests and platforms.<br>Open to read. Ready for your updater.</p>
+</section>
+<section aria-labelledby="services-title">
+  <div class="section-heading"><h2 id="services-title">Services</h2><span class="count"><%= @services.size %> listed</span></div>
+  <% if @services.empty? %>
+    <div class="empty"><h3>The catalogue is ready.</h3><p>No services have been published yet.</p></div>
+  <% else %>
+    <div class="service-list">
+      <% @services.each_with_index do |name, index| %>
+        <a class="service-row" href="/services/<%= h(name) %>"><span class="row-index"><%= format('%02d', index + 1) %></span><h3><%= h(name) %></h3><span>View releases <span aria-hidden="true">↗</span></span></a>
+      <% end %>
+    </div>
+  <% end %>
+</section>
+<% if can?('add') %>
+<section class="panel" aria-labelledby="create-title">
+  <p class="eyebrow">ADMINISTRATION</p><h2 id="create-title">Add a service</h2>
+  <p>Service aliases and every published release are public. Use an alias you intend to share.</p>
+  <form method="post" action="/services" class="inline-form"><%= csrf %><label>Public service alias<input name="name" required pattern="[a-z0-9][a-z0-9_-]{0,63}" maxlength="64" placeholder="example-service"></label><button>Add service ↗</button></form>
+</section>
+<% elsif identity %><p class="note">Signed in. Write access requires an explicit grant from an administrator.</p><% end %>

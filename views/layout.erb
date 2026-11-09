@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Release Mirror · Public catalogue</title>
+  <link rel="stylesheet" href="/catalogue.css">
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="masthead">
+    <a class="brand" href="/"><span aria-hidden="true" class="mark">↗</span> RELEASE MIRROR</a>
+    <nav aria-label="Main navigation">
+      <a href="/">Catalogue</a>
+      <a href="/api/v1/export">JSON export</a>
+      <% if identity %>
+        <% if can?('admin') %><a href="/permissions">Permissions</a><% end %>
+        <form method="post" action="/logout"><%= csrf %><button class="quiet">Sign out</button></form>
+      <% elsif settings.runtime_config['browserOidc'] %>
+        <form method="post" action="/auth/oidc"><%= csrf %><button class="quiet">Sign in ↗</button></form>
+      <% end %>
+    </nav>
+  </header>
+  <main id="content"><%= yield %></main>
+  <footer><span>PUBLIC METADATA / PRIVATE IMAGES</span><span>Tags as published upstream.</span></footer>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Merge this job configuration into the producer's successful build/push job.
+# The producer supplies metadata.json containing its ACTUAL pushed tags/digest.
+# It decides when to publish; this example adds no tag or release policy.
+jobs:
+  build-and-publish:
+    runs-on: docker
+    enable-openid-connect: true
+    steps:
+      # Your existing checkout/build/push steps must precede this step.
+      - name: Publish the pushed image metadata
+        env:
+          CATALOGUE_URL: https://catalogue.example.test
+          CATALOGUE_SERVICE: widget
+          CATALOGUE_AUDIENCE: release-catalogue
+          CATALOGUE_PAYLOAD_FILE: metadata.json
+        run: ruby release-mirror-publish.rb

@@ -1,0 +1,41 @@
+name: Verify catalogue
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  behaviour:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4.9'
+          bundler-cache: true
+      - run: bundle exec rake test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned Renovate test engine
+        run: npm install --prefix /tmp/renovate --ignore-scripts --no-audit --no-fund renovate@44.222.5
+      - name: Start isolated synthetic catalogue
+        run: |
+          FIXTURE_DIR=/tmp/release-mirror-fixture bundle exec ruby test/support/preview.rb >/tmp/catalogue-fixture.log 2>&1 &
+          for _attempt in {1..30}; do
+            if curl --fail --silent http://localhost:9292/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: Verify language-neutral HTTP contract
+        env:
+          CONTRACT_TOKEN_FILE: /tmp/release-mirror-fixture/token
+        run: ruby test/contract/acceptance.rb
+      - name: Verify Renovate version and digest updates
+        env:
+          RENOVATE_ENTRY: /tmp/renovate/node_modules/renovate/dist/renovate.js
+        run: node test/contract/renovate.mjs
+      - name: Verify portable container
+        run: |
+          docker build -t release-mirror:local .
+          ruby test/contract/container.rb

@@ -1,0 +1,8 @@
+[tools]
+ruby = "3.4.9"
+
+[tasks.test]
+run = "mise exec -- ruby -rbundler/setup -S rake test"
+
+[tasks.serve]
+run = "mise exec -- ruby -rbundler/setup -S puma -C config/puma.rb"

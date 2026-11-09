@@ -1,0 +1,22 @@
+services:
+  catalogue:
+    build: .
+    ports:
+      - "127.0.0.1:9292:9292"
+    environment:
+      SESSION_SECRET: "${SESSION_SECRET:?Set a random session secret of at least 64 bytes}"
+      API_CLIENT_SECRET: "${API_CLIENT_SECRET:-}"
+      BROWSER_CLIENT_SECRET: "${BROWSER_CLIENT_SECRET:-}"
+    volumes:
+      - catalogue-data:/data
+      - ./config/local.json:/config/config.json:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+volumes:
+  catalogue-data:

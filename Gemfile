@@ -1,0 +1,17 @@
+source 'https://rubygems.org'
+ruby '~> 3.4'
+gem 'sinatra', '~> 4.2'
+gem 'puma', '~> 7.0'
+gem 'rackup', '~> 2.3'
+gem 'sequel', '~> 5.0'
+gem 'sqlite3', '~> 2.9'
+gem 'jwt', '~> 3.1'
+gem 'omniauth_openid_connect', '~> 0.8'
+gem 'rack-session', '~> 2.1'
+gem 'logger'
+group :test do
+  gem 'minitest', '~> 5.0'
+  gem 'rack-test', '~> 2.2'
+  gem 'rake', '~> 13.0'
+  gem 'webmock', '~> 3.0'
+end

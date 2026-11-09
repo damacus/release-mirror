@@ -1,0 +1,8 @@
+{
+  "tags": ["v1.2.3", "actual-upstream-tag"],
+  "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "platforms": [
+    {"os": "linux", "architecture": "amd64"},
+    {"os": "linux", "architecture": "arm64", "variant": "v8"}
+  ]
+}

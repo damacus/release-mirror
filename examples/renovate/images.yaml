@@ -1,0 +1,5 @@
+# release-mirror: widget versioning=semver
+image: registry.example.test/private/widget:v1.0.0@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+# release-mirror: widget versioning=regex:^(?<major>0)?latest$
+image: registry.example.test/private/widget:latest@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

@@ -1,0 +1,26 @@
+<a class="back" href="/">← All services</a>
+<section class="service-intro"><p class="eyebrow">PUBLIC SERVICE</p><h1><%= h(@service) %></h1><p class="lede">Actual upstream tags. Current image digests.</p><div class="links"><a href="/api/v1/services/<%= h(@service) %>/releases">Release JSON ↗</a><a href="/api/v1/services/<%= h(@service) %>/renovate">Renovate feed ↗</a><% if can?('admin', @service) %><a href="/permissions?scope=<%= h(@service) %>">Service permissions ↗</a><% end %></div></section>
+<section aria-labelledby="releases-title">
+  <div class="section-heading"><h2 id="releases-title">Releases</h2><span class="count"><%= @releases.size %> tags</span></div>
+  <% if @releases.empty? %><div class="empty"><h3>Waiting for the first release.</h3><p>An authorised publisher can submit metadata after pushing an image.</p></div><% end %>
+  <% @releases.each do |release| %>
+    <article class="release"><div class="release-heading"><h3><%= h(release['version']) %></h3><span class="badge">PUBLIC</span></div>
+      <code class="digest"><%= h(release['digest']) %></code>
+      <ul class="platforms"><% release['platforms'].each do |platform| %><li><%= h([platform['os'], platform['architecture'], platform['variant']].compact.join('/')) %></li><% end %></ul>
+      <dl class="timestamps"><div><dt>Published</dt><dd><time><%= h(release['publishedAt']) %></time></dd></div><div><dt>Updated</dt><dd><time><%= h(release['updatedAt']) %></time></dd></div></dl>
+      <% if can?('delete', @service) %><details><summary>Delete this entry</summary><p>This removes public catalogue metadata. It does not delete the image, and previously fetched copies cannot be recalled.</p><form method="post" action="/services/<%= h(@service) %>/releases/<%= h(release['version']) %>/delete"><%= csrf %><button class="danger">Delete <%= h(release['version']) %></button></form></details><% end %>
+    </article>
+  <% end %>
+</section>
+<% if can?('add', @service) || can?('edit', @service) %>
+<section class="panel"><p class="eyebrow">PUBLISH METADATA</p><h2>Add or update upstream tags</h2><p>All submitted tags, digests and platforms become public. Enter actual tags already pushed upstream. Existing tags require edit permission.</p>
+  <form method="post" action="/services/<%= h(@service) %>/releases" class="stack"><%= csrf %>
+    <label>Public tags <span>Comma separated; preserved exactly</span><input name="tags" required maxlength="4127" placeholder="v1.2.3, actual-upstream-tag"></label>
+    <label>Image or image-index digest<input name="digest" required maxlength="135" placeholder="sha256:…"></label>
+    <label>Public platforms <span>JSON array</span><textarea name="platforms" required rows="4">[{"os":"linux","architecture":"amd64"}]</textarea></label>
+    <label class="check"><input name="immutable" type="checkbox" value="true">These upstream tags are immutable (cannot later change their image).</label>
+    <button>Publish metadata ↗</button>
+  </form>
+</section>
+<% end %>
+<% if can?('delete', @service) %><section class="panel"><details><summary>Delete service</summary><p>Remove this alias, its release metadata and its service grants from the live catalogue.</p><form method="post" action="/services/<%= h(@service) %>/delete"><%= csrf %><button class="danger">Delete service and all entries</button></form></details></section><% end %>
