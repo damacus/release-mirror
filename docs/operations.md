@@ -2,6 +2,21 @@
 
 ## Container releases
 
+Release Please maintains a release pull request from conventional commits on
+`main`; merging that pull request creates the GitHub release and tag. The first
+release is configured as `v0.1.0`. The release workflow explicitly dispatches
+the container workflow for that tag because tags created with `GITHUB_TOKEN` do
+not trigger ordinary tag-push workflows. Check the container workflow result
+and its digest before deploying; a GitHub release alone does not prove the
+image was published.
+If dispatch or publishing fails, rerun the container workflow manually against
+the existing release tag; do not create a new tag for the same release.
+
+The repository must allow GitHub Actions to create pull requests. With the
+default `GITHUB_TOKEN`, GitHub requires a maintainer to approve workflow runs
+on an Actions-created release pull request. A GitHub App token can remove that
+approval step if one is configured later.
+
 A push of a release tag such as `v1.0.0` or `v1.0.0-rc.1` builds and
 publishes `ghcr.io/damacus/release-mirror` for Linux amd64 and arm64. The
 workflow publishes the version tag and `sha-<full source commit SHA>` and
