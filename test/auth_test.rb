@@ -34,6 +34,22 @@ class AuthTest < Minitest::Test
     assert_equal [@issuer['jwksUri']], @calls
   end
 
+  def test_invalid_or_unavailable_workload_keys_fail_closed
+    [{}, {'keys' => []}, {'keys' => Array.new(33) { {} }}].each do |response|
+      auth = ReleaseMirror::Auth.new({'workloadIssuers' => [@issuer]}, transport: ->(_url) { response })
+      assert_equal 503, assert_raises(ReleaseMirror::Error) { auth.authenticate(token) }.status
+    end
+    auth = ReleaseMirror::Auth.new({'workloadIssuers' => [@issuer]}, transport: ->(_url) { raise ReleaseMirror::Error.new('Authentication unavailable', 503) })
+    assert_equal 503, assert_raises(ReleaseMirror::Error) { auth.authenticate(token) }.status
+  end
+
+  def test_rejects_malformed_credentials_before_contacting_provider
+    [nil, '', 'invalid token', 'x' * 16_385].each do |credential|
+      assert_equal 401, assert_raises(ReleaseMirror::Error) { @auth.authenticate(credential) }.status
+    end
+    assert_empty @calls
+  end
+
   def test_workload_configuration_controls_token_claims_and_lifetime
     issuer = @issuer.merge('tokenType' => 'at+jwt', 'repositoryClaim' => 'repo_id', 'maxLifetime' => 60)
     auth = ReleaseMirror::Auth.new({'workloadIssuers' => [issuer]}, transport: ->(_url) { {'keys' => [JWT::JWK.new(KEY.public_key).export]} })
