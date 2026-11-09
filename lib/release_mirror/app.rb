@@ -5,9 +5,34 @@ require 'cgi/escape'
 require_relative 'store'
 require_relative 'auth'
 require_relative 'config'
-require_relative 'oidc'
 
 module ReleaseMirror
+  # Public reads never initialise the browser login stack. Once a login starts,
+  # keep one middleware instance for subsequent callbacks and sign-ins.
+  class LazyBrowserOIDC
+    def initialize(app, **options)
+      @app = app
+      @options = options
+      @mutex = Mutex.new
+    end
+
+    def call(env)
+      return @app.call(env) unless ['/auth/oidc', '/auth/oidc/callback'].include?(env['PATH_INFO'])
+
+      middleware = @mutex.synchronize do
+        @middleware ||= begin
+          require_relative 'oidc'
+          OmniAuth.config.logger = Logger.new(File::NULL)
+          OmniAuth.config.on_failure = ->(_env) { [401, {'content-type' => 'application/json', 'cache-control' => 'no-store'}, ['{"error":"Login failed"}']] }
+          # Boundary checks the browser session's CSRF token before this middleware.
+          OmniAuth.config.request_validation_phase = ->(_env) {}
+          BrowserOIDC.new(@app, **@options)
+        end
+      end
+      middleware.call(env)
+    end
+  end
+
   class BrowserSessions
     def initialize(app, **options)
       @app = app
@@ -238,17 +263,12 @@ module ReleaseMirror
       klass.set :authenticator, authenticator || Auth.new(config)
       klass.set :runtime_config, config
       secure = config['publicUrl'].start_with?('https://')
-      # Discard provider diagnostics, including exception text containing claims.
-      OmniAuth.config.logger = Logger.new(File::NULL)
-      OmniAuth.config.on_failure = ->(_env) { [401, {'content-type' => 'application/json', 'cache-control' => 'no-store'}, ['{"error":"Login failed"}']] }
-      # Boundary has already performed a same-session CSRF check before OAuth.
-      OmniAuth.config.request_validation_phase = ->(_env) {}
       Rack::Builder.new do
         use BrowserSessions, key: 'release_mirror', secret: secret, secure: secure, httponly: true, same_site: :lax, expire_after: 3600
         use Boundary, config
         if (provider = config['browserOidc'])
           uri = URI(provider['issuer'])
-          use BrowserOIDC, issuer: provider['issuer'], discovery: true, scope: [:openid], response_type: 'code', require_state: true, send_state: true, send_nonce: true, pkce: true,
+          use LazyBrowserOIDC, issuer: provider['issuer'], discovery: true, scope: [:openid], response_type: 'code', require_state: true, send_state: true, send_nonce: true, pkce: true,
             client_signing_alg: provider.fetch('signingAlgorithm', 'RS256'),
             client_options: {identifier: provider['clientId'], secret: ENV.fetch(provider['clientSecretEnv']), scheme: uri.scheme, host: uri.host, port: uri.port, redirect_uri: "#{config['publicUrl'].delete_suffix('/')}/auth/oidc/callback"}
         end
