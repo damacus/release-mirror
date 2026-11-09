@@ -95,4 +95,53 @@ class CatalogueTest < Minitest::Test
       persistent.db.disconnect
     end
   end
+
+  def test_missing_and_duplicate_resources_return_conflict_or_not_found
+    assert_equal 409, assert_raises(ReleaseMirror::Error) { store.create_service(ADMIN, 'widget') }.status
+    assert_equal 404, assert_raises(ReleaseMirror::Error) { store.releases('missing') }.status
+    assert_equal 404, assert_raises(ReleaseMirror::Error) { store.publish(ADMIN, 'missing', release) }.status
+    assert_equal 404, assert_raises(ReleaseMirror::Error) { store.delete_release(ADMIN, 'widget', 'missing') }.status
+    assert_equal 404, assert_raises(ReleaseMirror::Error) { store.delete_service(ADMIN, 'missing') }.status
+    assert_equal 404, assert_raises(ReleaseMirror::Error) { grant(BUILD, ['publish'], 'missing') }.status
+    assert_equal 404, assert_raises(ReleaseMirror::Error) { store.revoke(ADMIN, 999) }.status
+  end
+
+  def test_deleting_service_removes_releases_and_grants
+    grant(BUILD, ['publish'])
+    store.publish(BUILD, 'widget', release)
+    store.delete_service(ADMIN, 'widget')
+    refute store.exists?('widget')
+    assert_empty store.db[:releases].where(service: 'widget').all
+    assert_empty store.db[:grants].where(scope: 'widget').all
+    store.create_service(ADMIN, 'widget')
+    assert_raises(ReleaseMirror::Error) { store.publish(BUILD, 'widget', release) }
+  end
+
+  def test_import_rejects_duplicate_records_and_bad_timestamps_atomically
+    store.publish(ADMIN, 'widget', release)
+    original = store.export
+    cases = [
+      ->(d) { d['schemaVersion'] = 2 },
+      ->(d) { d['services'] << Marshal.load(Marshal.dump(d['services'].first)) },
+      ->(d) { d['services'].first['releases'] = 'not-an-array' },
+      ->(d) { d['services'].first['releases'].first['service'] = 'other' },
+      ->(d) { d['services'].first['releases'] << d['services'].first['releases'].first.dup },
+      ->(d) { d['services'].first['releases'].first['updatedAt'] = '2000-01-01T00:00:00Z' },
+      ->(d) { d['services'].first['releases'].first['publishedAt'] = '2024-99-99T00:00:00Z' }
+    ]
+    cases.each do |change|
+      document = Marshal.load(Marshal.dump(original))
+      change.call(document)
+      assert_raises(ReleaseMirror::Error) { store.import(ADMIN, document) }
+      assert_equal original, store.export
+    end
+  end
+
+  def test_import_existing_immutable_release_preserves_policy
+    store.publish(ADMIN, 'widget', release.merge('immutable' => true))
+    snapshot = store.export
+    store.import(ADMIN, snapshot)
+    assert_equal snapshot, store.export
+    assert_equal 409, assert_raises(ReleaseMirror::Error) { store.publish(ADMIN, 'widget', release(['v1.0.0'], 'b')) }.status
+  end
 end

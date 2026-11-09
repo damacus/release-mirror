@@ -171,7 +171,14 @@ module ReleaseMirror
             Validation.object(row, %w[service version digest platforms publishedAt updatedAt], %w[service version digest platforms publishedAt updatedAt])
             raise Error unless row['service'] == name && !tags.include?(row['version'])
             tags << row['version']
-            times = %w[publishedAt updatedAt].map { |key| Validation.string(row[key], /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?Z\z/, 40); Time.iso8601(row[key]) }
+            times = %w[publishedAt updatedAt].map do |key|
+              Validation.string(row[key], /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,9})?Z\z/, 40)
+              begin
+                Time.iso8601(row[key])
+              rescue ArgumentError
+                raise Error
+              end
+            end
             raise Error if times[1] < times[0]
             existing = @db[:releases].where(service: name, version: row['version']).first
             publish(identity, name, {'tags' => [row['version']], 'digest' => row['digest'], 'platforms' => row['platforms'], 'immutable' => existing ? existing[:immutable] : false})

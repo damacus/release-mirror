@@ -36,6 +36,8 @@ class ConfigTest < Minitest::Test
       [workload.merge('audience' => '')]
     ]
     invalid_issuers.each { |issuers| assert_raises(ReleaseMirror::Error) { ReleaseMirror::Config.validate(base.merge('workloadIssuers' => issuers)) } }
+    assert_raises(ReleaseMirror::Error) { ReleaseMirror::Config.validate(base.merge('workloadIssuers' => 'invalid')) }
+    assert_raises(ReleaseMirror::Error) { ReleaseMirror::Config.validate(base.merge('workloadIssuers' => Array.new(17) { workload })) }
     assert_raises(ReleaseMirror::Error) { ReleaseMirror::Config.validate(base.merge('bootstrap' => Fixtures::BUILD)) }
     assert_raises(ReleaseMirror::Error) { ReleaseMirror::Config.validate(base.merge('browserOidc' => {'issuer' => 'https://id.example.test', 'clientId' => 'client', 'clientSecretEnv' => 'SECRET', 'signingAlgorithm' => 'none'})) }
   end

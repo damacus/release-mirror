@@ -17,7 +17,7 @@ class LazyOidcTest < Minitest::Test
         response = request.get(path, 'HTTP_HOST' => 'localhost:9292')
         abort "Unexpected status for #{path}" unless response.status == 200
       end
-      abort 'OIDC was loaded before login' if $LOADED_FEATURES.any? { |path| path.include?('omniauth_openid_connect') }
+      abort 'OIDC was loaded before login' if $LOADED_FEATURES.any? { |path| path.include?('omniauth_oidc') }
     RUBY
     output, error, status = Open3.capture3(RbConfig.ruby, '-rbundler/setup', '-e', program)
     assert status.success?, "#{output}\n#{error}"

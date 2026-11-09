@@ -82,6 +82,23 @@ class AuthTest < Minitest::Test
     ENV.delete('TEST_API_SECRET')
   end
 
+  def test_human_api_rejects_not_yet_valid_tokens_and_fails_closed_on_outage
+    api = {'issuer' => HUMAN['issuer'], 'audience' => 'catalogue', 'introspectionUri' => 'https://identity.example.test/introspect', 'clientId' => 'api', 'clientSecretEnv' => 'TEST_API_SECRET'}
+    ENV['TEST_API_SECRET'] = 'test-only'
+    result = {'active' => true, 'token_type' => 'Bearer', 'iss' => HUMAN['issuer'], 'aud' => ['catalogue'], 'exp' => Time.now.to_i + 600, 'sub' => HUMAN['subject']}
+    auth = ReleaseMirror::Auth.new({'humanApi' => api}, transport: ->(_url, **_options) { result })
+    assert_equal HUMAN, auth.authenticate('opaque')
+    [{'nbf' => Time.now.to_i + 60}, {'iat' => Time.now.to_i + 60}, {'nbf' => 'invalid'}, {'iat' => 'invalid'}].each do |change|
+      result.merge!(change)
+      assert_equal 401, assert_raises(ReleaseMirror::Error) { auth.authenticate('opaque') }.status
+      change.each_key { |key| result.delete(key) }
+    end
+    unavailable = ReleaseMirror::Auth.new({'humanApi' => api}, transport: ->(_url, **_options) { raise ReleaseMirror::Error.new('Authentication unavailable', 503) })
+    assert_equal 503, assert_raises(ReleaseMirror::Error) { unavailable.authenticate('opaque') }.status
+  ensure
+    ENV.delete('TEST_API_SECRET')
+  end
+
   def test_authentication_does_not_imply_authorisation
     store.create_service(ADMIN, 'widget')
     different = @auth.authenticate(token(@claims.merge('repository_id' => 99)))
