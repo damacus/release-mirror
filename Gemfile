@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 ruby '~> 4.0.9'
 gem 'sinatra', '~> 4.2'
-gem 'puma', '~> 7.0'
+gem 'puma', '~> 8.0'
 gem 'rackup', '~> 2.3'
 gem 'sequel', '~> 5.0'
 gem 'sqlite3', '~> 2.9'
