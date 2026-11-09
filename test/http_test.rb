@@ -76,6 +76,13 @@ class HttpTest < Minitest::Test
     header 'Host', 'evil.example.test'
     get '/api/v1/services'
     assert_equal 403, last_response.status
+    header 'Forwarded', 'host=catalogue.example.test;proto=https'
+    get '/api/v1/services'
+    assert_equal 403, last_response.status
+    header 'Forwarded', nil
+    header 'X-Forwarded-Host', 'catalogue.example.test'
+    get '/api/v1/services'
+    assert_equal 403, last_response.status
   end
 
   def test_health_and_static_css_need_no_session

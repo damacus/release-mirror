@@ -31,7 +31,8 @@ module ReleaseMirror
     def call(env)
       request = Rack::Request.new(env)
       return response(400, 'Invalid request') if env['PATH_INFO'].to_s.bytesize > 2048 || env['QUERY_STRING'].to_s.bytesize > 4096
-      return response(403, 'Forbidden') unless request.host == @origin.host
+      authority = env['HTTP_HOST'].to_s
+      return response(403, 'Forbidden') unless authority.match?(/\A#{Regexp.escape(@origin.host)}(?::[0-9]{1,5})?\z/i)
       body = env['rack.input']&.read(MAX_BODY + 1).to_s
       return response(413, 'Request too large') if body.bytesize > MAX_BODY
       env['rack.input'] = StringIO.new(body)

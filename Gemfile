@@ -10,6 +10,8 @@ gem 'omniauth_openid_connect', '~> 0.8'
 gem 'rack-session', '~> 2.1'
 gem 'logger'
 group :test do
+  gem 'brakeman', '~> 8.1'
+  gem 'bundler-audit', '~> 0.9'
   gem 'minitest', '~> 5.0'
   gem 'rack-test', '~> 2.2'
   gem 'rake', '~> 13.0'
