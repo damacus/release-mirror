@@ -38,29 +38,27 @@ class CatalogueTest < Minitest::Test
     assert_empty store.releases('widget')
   end
 
-  def test_add_edit_delete_matrix_and_atomic_multi_tag
-    grant(BUILD, ['add'])
+  def test_publisher_adds_and_updates_only_its_service
+    grant(BUILD, ['publish'])
     store.publish(BUILD, 'widget', release)
-    assert_equal 403, assert_raises(ReleaseMirror::Error) { store.publish(BUILD, 'widget', release(['new-tag', 'v1.0.0'], 'b')) }.status
-    assert_equal ['v1.0.0'], store.releases('widget').map { |r| r['version'] }
+    store.publish(BUILD, 'widget', release(['new-tag', 'v1.0.0'], 'b'))
+    assert_equal ['new-tag', 'v1.0.0'], store.releases('widget').map { |r| r['version'] }
     assert_raises(ReleaseMirror::Error) { store.delete_release(BUILD, 'widget', 'v1.0.0') }
     assert_raises(ReleaseMirror::Error) { store.create_service(BUILD, 'other') }
-    grant(BUILD, %w[edit delete])
-    store.publish(BUILD, 'widget', release(['v1.0.0'], 'b'))
-    store.delete_release(BUILD, 'widget', 'v1.0.0')
-    assert_empty store.releases('widget')
-    assert_empty store.db[:releases].all
+    store.create_service(ADMIN, 'other')
+    assert_raises(ReleaseMirror::Error) { store.publish(BUILD, 'other', release) }
     refute store.allowed?(BUILD, 'admin', 'widget')
     refute store.allowed?(HUMAN, 'add', 'widget')
   end
 
-  def test_global_writer_and_scoped_admin
-    grant(BUILD, %w[add edit delete], '*')
-    store.create_service(BUILD, 'other')
-    store.publish(BUILD, 'other', release)
-    grant(HUMAN, ['admin'])
+  def test_global_admin_and_legacy_grants_fail_closed
+    assert_raises(ReleaseMirror::Error) { grant(BUILD, ['publish'], '*') }
+    assert_raises(ReleaseMirror::Error) { grant(HUMAN, ['admin'], 'widget') }
+    grant(HUMAN, ['admin'], '*')
     assert store.allowed?(HUMAN, 'edit', 'widget')
-    refute store.allowed?(HUMAN, 'admin', '*')
+    assert store.allowed?(HUMAN, 'admin', '*')
+    store.db[:grants].insert(**BUILD.transform_keys(&:to_sym), scope: 'widget', action: 'edit')
+    refute store.allowed?(BUILD, 'edit', 'widget')
     assert_raises(ReleaseMirror::Error) { grant_body = {'identity' => BUILD, 'scope' => '*', 'actions' => ['admin']}; store.grant(HUMAN, grant_body) }
   end
 

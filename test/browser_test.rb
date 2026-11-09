@@ -30,8 +30,8 @@ class BrowserTest < Minitest::Test
     assert_equal 302, last_response.status
     URI.decode_www_form(URI(last_response['location']).query).to_h
   end
-  def provider_response(params, subject: 'operator', nonce: params['nonce'], id_token: true)
-    token = JWT.encode({'iss' => ISSUER, 'sub' => subject, 'aud' => 'browser', 'iat' => Time.now.to_i, 'exp' => Time.now.to_i + 600, 'nonce' => nonce}, KEY, 'RS256', {'kid' => JWT::JWK.new(KEY.public_key).kid})
+  def provider_response(params, subject: 'operator', nonce: params['nonce'], id_token: true, claims: {}, key: KEY)
+    token = JWT.encode({'iss' => ISSUER, 'sub' => subject, 'aud' => 'browser', 'iat' => Time.now.to_i, 'exp' => Time.now.to_i + 600, 'nonce' => nonce}.merge(claims).compact, key, 'RS256', {'kid' => JWT::JWK.new(KEY.public_key).kid})
     response = {'access_token' => 'fixture-access-token', 'token_type' => 'Bearer', 'expires_in' => 600}
     response['id_token'] = token if id_token
     stub_request(:post, "#{ISSUER}/token").with do |request|
@@ -45,6 +45,7 @@ class BrowserTest < Minitest::Test
     auth = begin_login
     assert_equal 'S256', auth['code_challenge_method']
     assert auth['state'] && auth['nonce'] && auth['code_challenge']
+    assert_equal 'https://catalogue.example.test/auth/oidc/callback', auth['redirect_uri']
     provider_response(auth)
     get 'https://catalogue.example.test/auth/oidc/callback', {'code' => 'fixture-code', 'state' => auth['state']}
     assert_equal 303, last_response.status
@@ -72,7 +73,7 @@ class BrowserTest < Minitest::Test
     get 'https://catalogue.example.test/permissions'
     assert_equal 200, last_response.status
     token = csrf_token
-    post 'https://catalogue.example.test/permissions', {'csrf' => token, 'kind' => 'human', 'issuer' => ISSUER, 'subject' => '<script>alert(1)</script>', 'scope' => '*', 'actions' => ['add']}
+    post 'https://catalogue.example.test/permissions', {'csrf' => token, 'role' => 'admin', 'issuer' => ISSUER, 'subject' => '<script>alert(1)</script>', 'scope' => '*'}
     follow_redirect!
     assert_includes last_response.body, '&lt;script&gt;'
     refute_includes last_response.body, '<script>'
@@ -80,6 +81,35 @@ class BrowserTest < Minitest::Test
     assert_equal 303, last_response.status
     follow_redirect!
     refute_includes last_response.body, 'Add a service'
+  end
+
+  def test_invalid_signed_token_claims_and_signature_are_rejected
+    [{'iss' => 'https://wrong.example.test'}, {'aud' => 'other'}, {'exp' => Time.now.to_i - 120}, {'iat' => nil}, {'aud' => ['browser', 'other']}, {'azp' => 'other'}].each do |claims|
+      auth = begin_login
+      provider_response(auth, claims: claims)
+      get 'https://catalogue.example.test/auth/oidc/callback', {'code' => 'fixture-code', 'state' => auth['state']}
+      assert_equal 401, last_response.status
+    end
+    auth = begin_login
+    provider_response(auth, key: OpenSSL::PKey::RSA.generate(2048))
+    get 'https://catalogue.example.test/auth/oidc/callback', {'code' => 'fixture-code', 'state' => auth['state']}
+    assert_equal 401, last_response.status
+  end
+
+  def test_discovery_rejects_mismatched_issuer_and_insecure_endpoints
+    begin_login # Load the lazily initialised strategy before clearing its discovery cache.
+    [
+      {issuer: 'https://wrong.example.test', authorization_endpoint: "#{ISSUER}/authorize", token_endpoint: "#{ISSUER}/token", jwks_uri: "#{ISSUER}/keys"},
+      {issuer: ISSUER, authorization_endpoint: "#{ISSUER}/authorize", token_endpoint: 'http://identity.example.test/token', jwks_uri: "#{ISSUER}/keys"}
+    ].each do |document|
+      OmniauthOidc::ConfigFetcher.clear_cache!
+      stub_request(:get, "#{ISSUER}/.well-known/openid-configuration").to_return(headers: {'Content-Type' => 'application/json'}, body: JSON.generate(document))
+      get 'https://catalogue.example.test/'
+      post 'https://catalogue.example.test/auth/oidc', {'csrf' => csrf_token}
+      assert_equal 401, last_response.status
+    end
+  ensure
+    OmniauthOidc::ConfigFetcher.clear_cache! if defined?(OmniauthOidc::ConfigFetcher)
   end
 
   def test_first_login_is_read_only_and_cookie_cannot_authorise_api

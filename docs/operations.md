@@ -16,10 +16,10 @@ Use request-size limits (1 MiB), connection/read timeouts and normal traffic con
 2. Register the human API resource for Basic-authenticated introspection. The chosen token must introspect as an active Bearer access token for the catalogue audience, with issuer, subject and expiry. Do not use a browser ID token.
 3. Set the bootstrap human issuer and exact user ID before first login. Verify that a different person is read-only. There is no first-login bootstrap.
 4. Verify the deployed Forgejo/runner versions and actual workload token claims. Current Forgejo documents the workload issuer `/api/actions` and immutable `repository_id`. Pin the configured issuer, audience, key endpoint, type, algorithm and maximum token lifetime to the actual installation.
-5. Create the public service alias using global add/admin rights. Grant only that service's required capabilities to the immutable repository ID. The owner intentionally accepts **any accepted build identity for that repository**, including pull-request builds; do not silently introduce a main/release-only condition. Forgejo controls which job/event identities it issues, including fork restrictions.
+5. Create the public service alias as a global administrator. Grant `publish` for that service to the immutable repository ID. The owner intentionally accepts **any accepted build identity for that repository**, including pull-request builds; do not silently introduce a main/release-only condition. Forgejo controls which job/event identities it issues, including fork restrictions.
 6. Verify browser sign-in, access-token introspection, successful workload publication and rejection from another repository. Local fixtures do not establish real deployment compatibility.
 
-Authentication is not administration. Global add/edit/delete grants are write capabilities; only admin manages grants. Service admin includes all operations for that existing alias but cannot create aliases or grant outside its scope. Check grants after identity changes. Revocation is evaluated per request; removing a grant takes effect for subsequent requests even when a browser session remains authenticated.
+Authentication is not administration. Human global administrators manage the catalogue and grants. Workload publishers can add or update releases only in their assigned service; they cannot delete or manage permissions. Previous granular and scoped administrator grants no longer authorise operations and must be replaced deliberately. Existing human global administrator grants remain valid. Revocation is evaluated per request, even when a browser session remains authenticated.
 
 ## Sessions and keys
 
@@ -43,7 +43,7 @@ Use an operator-controlled backup destination that does not already exist. Copy 
 
 To restore, stop the service, preserve the current files if needed, replace the database with a compatible consistent backup, remove stale `-wal`/`-shm` companions only while stopped, preserve UID/GID 10001 ownership, then start the same compatible application version and verify the public export and grants. A restored backup intentionally restores the entire catalogue as it existed then, including entries deleted afterwards. This is expected behaviour.
 
-Public JSON export/import is a language-neutral metadata transfer, not a full operational backup: it excludes identity grants and private immutability flags. Import merges atomically using normal add/edit rights. New entries preserve imported timestamps; existing timestamps are server-managed. Duplicate aliases/tags, mismatched service names, invalid timestamps or unknown fields reject the entire document. Requests exceeding 1 MiB must be split into independently reviewed imports; atomicity applies per request.
+Public JSON export/import is a language-neutral metadata transfer, not a full operational backup: it excludes identity grants and private immutability flags. Import merges atomically using normal publisher or administrator rights; creating a service requires a global administrator. New entries preserve imported timestamps; existing timestamps are server-managed. Duplicate aliases/tags, mismatched service names, invalid timestamps or unknown fields reject the entire document. Requests exceeding 1 MiB must be split into independently reviewed imports; atomicity applies per request.
 
 ## Deletion and caches
 
