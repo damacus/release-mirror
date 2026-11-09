@@ -11,6 +11,9 @@ module Puma
     # pkg:gem/puma#lib/puma.rb:45
     def abstract_unix_socket?; end
 
+    # pkg:gem/puma#lib/puma/detect.rb:55
+    def backtrace_signal; end
+
     # Shows deprecated warning for renamed methods.
     # @example
     #   Puma.deprecate_method_change :on_booted, __callee__, __method__
@@ -20,7 +23,7 @@ module Puma
 
     # @version 5.0.0
     #
-    # pkg:gem/puma#lib/puma/detect.rb:44
+    # pkg:gem/puma#lib/puma/detect.rb:51
     def forkable?; end
 
     # pkg:gem/puma#lib/puma/detect.rb:26
@@ -28,7 +31,7 @@ module Puma
 
     # @version 5.0.0
     #
-    # pkg:gem/puma#lib/puma/detect.rb:39
+    # pkg:gem/puma#lib/puma/detect.rb:46
     def mri?; end
 
     # pkg:gem/puma#lib/puma/detect.rb:30
@@ -60,6 +63,9 @@ module Puma
     def windows?; end
   end
 end
+
+# pkg:gem/puma#lib/puma/detect.rb:38
+Puma::BACKTRACE_SIGNAL = T.let(T.unsafe(nil), String)
 
 # pkg:gem/puma#lib/puma/binder.rb:16
 class Puma::Binder
@@ -222,8 +228,8 @@ end
 # pkg:gem/puma#lib/puma/binder.rb:19
 Puma::Binder::RACK_VERSION = T.let(T.unsafe(nil), Array)
 
-# An instance of this class represents a unique request from a client.
-# For example, this could be a web request from a browser or from CURL.
+# An instance of this class wraps a connection/socket.
+# For example, this could be an http request from a browser or from CURL.
 #
 # An instance of `Puma::Client` can be used as if it were an IO object
 # by the reactor. The reactor is expected to call `#to_io`
@@ -231,244 +237,324 @@ Puma::Binder::RACK_VERSION = T.let(T.unsafe(nil), Array)
 # `IO::try_convert` (which may call `#to_io`) when a new socket is
 # registered.
 #
-# Instances of this class are responsible for knowing if
-# the header and body are fully buffered via the `try_to_finish` method.
+# Instances of this class are responsible for knowing if the request line,
+# headers and body are fully buffered and verified via the `try_to_finish` method.
+# All verification of each request is done in the `Client` object.
 # They can be used to "time out" a response via the `timeout_at` reader.
 #
-# pkg:gem/puma#lib/puma/client.rb:36
+# Most of the code for env processing and verification is contained
+# in `Puma::ClientEnv`, which is included.
+#
+# pkg:gem/puma#lib/puma/client.rb:41
 class Puma::Client
   include ::Puma::Const
+  include ::Puma::ClientEnv
 
-  # pkg:gem/puma#lib/puma/client.rb:70
+  # pkg:gem/puma#lib/puma/client.rb:83
   def initialize(io, env = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:75
   def body; end
 
   # Returns true if the persistent connection can be closed immediately
   # without waiting for the configured idle/shutdown timeout.
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/client.rb:394
+  # pkg:gem/puma#lib/puma/client.rb:388
   def can_close?; end
 
-  # pkg:gem/puma#lib/puma/client.rb:192
+  # pkg:gem/puma#lib/puma/client.rb:194
   def close; end
 
   # Remove in Puma 7?
   #
-  # pkg:gem/puma#lib/puma/client.rb:119
+  # pkg:gem/puma#lib/puma/client.rb:125
   def closed?; end
 
-  # pkg:gem/puma#lib/puma/client.rb:305
+  # pkg:gem/puma#lib/puma/client.rb:285
   def eagerly_finish; end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:75
   def env; end
 
-  # pkg:gem/puma#lib/puma/client.rb:399
+  # pkg:gem/puma#lib/puma/client.rb:81
+  def env_set_http_version; end
+
+  # pkg:gem/puma#lib/puma/client.rb:81
+  def env_set_http_version=(_arg0); end
+
+  # pkg:gem/puma#lib/puma/client.rb:75
+  def error_status_code; end
+
+  # pkg:gem/puma#lib/puma/client.rb:393
   def expect_proxy_proto=(val); end
 
-  # pkg:gem/puma#lib/puma/client.rb:313
+  # pkg:gem/puma#lib/puma/client.rb:293
   def finish(timeout); end
 
   # For the full hijack protocol, `env['rack.hijack']` is set to
   # `client.method :full_hijack`
   #
-  # pkg:gem/puma#lib/puma/client.rb:136
+  # pkg:gem/puma#lib/puma/client.rb:142
   def full_hijack; end
 
   # if a client sends back-to-back requests, the buffer may contain one or more
   # of them.
   #
-  # pkg:gem/puma#lib/puma/client.rb:188
+  # pkg:gem/puma#lib/puma/client.rb:190
   def has_back_to_back_requests?; end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:75
   def hijacked; end
 
-  # pkg:gem/puma#lib/puma/client.rb:114
+  # pkg:gem/puma#lib/puma/client.rb:79
   def http_content_length_limit=(_arg0); end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:75
   def http_content_length_limit_exceeded; end
 
   # @!attribute [r] in_data_phase
   #
-  # pkg:gem/puma#lib/puma/client.rb:142
+  # pkg:gem/puma#lib/puma/client.rb:148
   def in_data_phase; end
 
   # @!attribute [r] inspect
   #
-  # pkg:gem/puma#lib/puma/client.rb:130
+  # pkg:gem/puma#lib/puma/client.rb:136
   def inspect; end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:75
   def io; end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:75
   def io_buffer; end
 
   # Test to see if io meets a bare minimum of functioning, @to_io needs to be
   # used for MiniSSL::Socket
   #
-  # pkg:gem/puma#lib/puma/client.rb:125
+  # pkg:gem/puma#lib/puma/client.rb:131
   def io_ok?; end
 
-  # pkg:gem/puma#lib/puma/client.rb:116
+  # pkg:gem/puma#lib/puma/client.rb:81
   def listener; end
 
-  # pkg:gem/puma#lib/puma/client.rb:116
+  # pkg:gem/puma#lib/puma/client.rb:81
   def listener=(_arg0); end
 
   # Wraps `@parser.execute` and adds meaningful error messages
   # @return [Integer] bytes of buffer read by parser
   #
-  # pkg:gem/puma#lib/puma/client.rb:321
+  # pkg:gem/puma#lib/puma/client.rb:301
   def parser_execute; end
 
-  # pkg:gem/puma#lib/puma/client.rb:380
+  # pkg:gem/puma#lib/puma/client.rb:374
   def peer_family; end
 
-  # pkg:gem/puma#lib/puma/client.rb:368
+  # pkg:gem/puma#lib/puma/client.rb:362
   def peerip; end
 
-  # pkg:gem/puma#lib/puma/client.rb:114
+  # pkg:gem/puma#lib/puma/client.rb:79
   def peerip=(_arg0); end
 
   # only used with back-to-back requests contained in the buffer
   #
-  # pkg:gem/puma#lib/puma/client.rb:171
+  # pkg:gem/puma#lib/puma/client.rb:178
   def process_back_to_back_requests; end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # processes the `env` and the request body
+  #
+  # pkg:gem/puma#lib/puma/client.rb:342
+  def process_env_body; end
+
+  # pkg:gem/puma#lib/puma/client.rb:75
   def ready; end
 
-  # pkg:gem/puma#lib/puma/client.rb:116
+  # pkg:gem/puma#lib/puma/client.rb:81
   def remote_addr_header; end
 
-  # pkg:gem/puma#lib/puma/client.rb:116
+  # pkg:gem/puma#lib/puma/client.rb:81
   def remote_addr_header=(_arg0); end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:75
   def requests_served; end
 
-  # pkg:gem/puma#lib/puma/client.rb:156
+  # pkg:gem/puma#lib/puma/client.rb:162
   def reset; end
 
-  # pkg:gem/puma#lib/puma/client.rb:146
+  # pkg:gem/puma#lib/puma/client.rb:152
   def set_timeout(val); end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:79
+  def supported_http_methods=(_arg0); end
+
+  # pkg:gem/puma#lib/puma/client.rb:75
   def tempfile; end
 
-  # pkg:gem/puma#lib/puma/client.rb:200
+  # pkg:gem/puma#lib/puma/client.rb:202
   def tempfile_close; end
 
   # Number of seconds until the timeout elapses.
   # @!attribute [r] timeout
   #
-  # pkg:gem/puma#lib/puma/client.rb:152
+  # pkg:gem/puma#lib/puma/client.rb:158
   def timeout; end
 
-  # pkg:gem/puma#lib/puma/client.rb:356
+  # pkg:gem/puma#lib/puma/client.rb:350
   def timeout!; end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:75
   def timeout_at; end
 
-  # pkg:gem/puma#lib/puma/client.rb:110
+  # pkg:gem/puma#lib/puma/client.rb:75
   def to_io; end
 
-  # pkg:gem/puma#lib/puma/client.rb:249
+  # pkg:gem/puma#lib/puma/client.rb:251
   def try_to_finish; end
 
   # If necessary, read the PROXY protocol from the buffer. Returns
   # false if more data is needed.
   #
-  # pkg:gem/puma#lib/puma/client.rb:211
+  # pkg:gem/puma#lib/puma/client.rb:213
   def try_to_parse_proxy_protocol; end
 
-  # pkg:gem/puma#lib/puma/client.rb:361
+  # pkg:gem/puma#lib/puma/client.rb:355
   def write_error(status_code); end
 
   private
 
-  # pkg:gem/puma#lib/puma/client.rb:728
-  def above_http_content_limit(value); end
-
-  # pkg:gem/puma#lib/puma/client.rb:599
+  # pkg:gem/puma#lib/puma/client.rb:618
   def decode_chunk(chunk); end
 
-  # pkg:gem/puma#lib/puma/client.rb:510
+  # pkg:gem/puma#lib/puma/client.rb:747
+  def raise_above_http_content_limit; end
+
+  # pkg:gem/puma#lib/puma/client.rb:525
   def read_body; end
 
-  # pkg:gem/puma#lib/puma/client.rb:551
+  # pkg:gem/puma#lib/puma/client.rb:566
   def read_chunked_body; end
 
-  # pkg:gem/puma#lib/puma/client.rb:720
+  # pkg:gem/puma#lib/puma/client.rb:739
   def set_ready; end
 
-  # pkg:gem/puma#lib/puma/client.rb:412
+  # Checks the request `Transfer-Encoding` and/or `Content-Length` to see if
+  # they are valid.  Raises errors if not, otherwise reads the body.
+  # @return [Boolean] true if the body can be completely read, false otherwise
+  #
+  # pkg:gem/puma#lib/puma/client.rb:424
   def setup_body; end
 
-  # pkg:gem/puma#lib/puma/client.rb:576
+  # pkg:gem/puma#lib/puma/client.rb:591
   def setup_chunked_body(body); end
+
+  # pkg:gem/puma#lib/puma/client.rb:409
+  def socket_peerip; end
+
+  # Converts IPv4-mapped IPv6 addresses (e.g. ::ffff:127.0.0.1) back to
+  # their IPv4 form. These addresses appear when IPv4 clients connect to
+  # a dual-stack IPv6 socket.
+  #
+  # pkg:gem/puma#lib/puma/client.rb:416
+  def unmap_ipv6(addr); end
 
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/client.rb:595
+  # pkg:gem/puma#lib/puma/client.rb:610
   def write_chunk(str); end
 end
 
 # this tests all values but the last, which must be chunked
 #
-# pkg:gem/puma#lib/puma/client.rb:39
+# pkg:gem/puma#lib/puma/client.rb:46
 Puma::Client::ALLOWED_TRANSFER_ENCODING = T.let(T.unsafe(nil), Array)
 
 # chunked body validation
 #
-# pkg:gem/puma#lib/puma/client.rb:42
+# pkg:gem/puma#lib/puma/client.rb:49
 Puma::Client::CHUNK_SIZE_INVALID = T.let(T.unsafe(nil), Regexp)
 
-# pkg:gem/puma#lib/puma/client.rb:43
+# pkg:gem/puma#lib/puma/client.rb:50
 Puma::Client::CHUNK_VALID_ENDING = T.let(T.unsafe(nil), String)
 
-# pkg:gem/puma#lib/puma/client.rb:44
+# pkg:gem/puma#lib/puma/client.rb:51
 Puma::Client::CHUNK_VALID_ENDING_SIZE = T.let(T.unsafe(nil), Integer)
 
 # Content-Length header value validation
 #
-# pkg:gem/puma#lib/puma/client.rb:55
+# pkg:gem/puma#lib/puma/client.rb:62
 Puma::Client::CONTENT_LENGTH_VALUE_INVALID = T.let(T.unsafe(nil), Regexp)
 
 # The object used for a request with no body. All requests with
 # no body share this one object since it has no state.
 #
-# pkg:gem/puma#lib/puma/client.rb:66
+# pkg:gem/puma#lib/puma/client.rb:73
 Puma::Client::EmptyBody = T.let(T.unsafe(nil), Puma::NullIO)
+
+# pkg:gem/puma#lib/puma/client.rb:406
+Puma::Client::IPV4_MAPPED_IPV6_PREFIX = T.let(T.unsafe(nil), String)
 
 # The maximum amount of excess data the client sends
 # using chunk size extensions before we abort the connection.
 #
-# pkg:gem/puma#lib/puma/client.rb:52
+# pkg:gem/puma#lib/puma/client.rb:59
 Puma::Client::MAX_CHUNK_EXCESS = T.let(T.unsafe(nil), Integer)
 
 # The maximum number of bytes we'll buffer looking for a valid
 # chunk header.
 #
-# pkg:gem/puma#lib/puma/client.rb:48
+# pkg:gem/puma#lib/puma/client.rb:55
 Puma::Client::MAX_CHUNK_HEADER_SIZE = T.let(T.unsafe(nil), Integer)
 
 # See:
 # https://httpwg.org/specs/rfc9110.html#rfc.section.5.6.1.1
 # https://httpwg.org/specs/rfc9112.html#rfc.section.6.1
 #
-# pkg:gem/puma#lib/puma/client.rb:62
+# pkg:gem/puma#lib/puma/client.rb:69
 Puma::Client::STRIP_OWS = T.let(T.unsafe(nil), Regexp)
 
-# pkg:gem/puma#lib/puma/client.rb:57
+# pkg:gem/puma#lib/puma/client.rb:64
 Puma::Client::TE_ERR_MSG = T.let(T.unsafe(nil), String)
+
+# This module is included in `Client`.  It contains code to process the `env`
+# before it is passed to the app.
+#
+# pkg:gem/puma#lib/puma/client_env.rb:11
+module Puma::ClientEnv
+  include ::Puma::Const
+
+  # @return [Puma::Const::PORT_443,Puma::Const::PORT_80]
+  #
+  # pkg:gem/puma#lib/puma/client_env.rb:160
+  def default_server_port; end
+
+  # Given a Hash +env+ for the request read from +client+, add
+  # and fixup keys to comply with Rack's env guidelines.
+  # @param env [Hash] see Puma::Client#env, from request
+  # @param client [Puma::Client] only needed for Client#peerip
+  #
+  # pkg:gem/puma#lib/puma/client_env.rb:20
+  def normalize_env; end
+
+  # Fixup any headers with `,` in the name to have `_` now. We emit
+  # headers with `,` in them during the parse phase to avoid ambiguity
+  # with the `-` to `_` conversion for critical headers. But here for
+  # compatibility, we'll convert them back. This code is written to
+  # avoid allocation in the common case (ie there are no headers
+  # with `,` in their names), that's why it has the extra conditionals.
+  #
+  # @note If a normalized version of a `,` header already exists, we ignore
+  #       the `,` version. This prevents clobbering headers managed by proxies
+  #       but not by clients (Like X-Forwarded-For).
+  #
+  # @param env [Hash] see Puma::Client#env, from request, modifies in place
+  # @version 5.0.3
+  #
+  # pkg:gem/puma#lib/puma/client_env.rb:115
+  def req_env_post_parse; end
+end
+
+# pkg:gem/puma#lib/puma/client_env.rb:155
+Puma::ClientEnv::HTTP_ON_VALUES = T.let(T.unsafe(nil), Hash)
 
 # This class is instantiated by the `Puma::Launcher` and used
 # to boot and serve a Ruby application when puma "workers" are needed
@@ -839,23 +925,23 @@ end
 # is done because an environment variable may have been modified while loading
 # configuration files.
 #
-# pkg:gem/puma#lib/puma/configuration.rb:128
+# pkg:gem/puma#lib/puma/configuration.rb:131
 class Puma::Configuration
-  # pkg:gem/puma#lib/puma/configuration.rb:179
+  # pkg:gem/puma#lib/puma/configuration.rb:184
   def initialize(user_options = T.unsafe(nil), default_options = T.unsafe(nil), env = T.unsafe(nil), &block); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:200
+  # pkg:gem/puma#lib/puma/configuration.rb:205
   def _options; end
 
   # Load the specified rackup file, pull options from
   # the rackup file, and set @app.
   #
-  # pkg:gem/puma#lib/puma/configuration.rb:313
+  # pkg:gem/puma#lib/puma/configuration.rb:322
   def app; end
 
   # Indicate if there is a properly configured app
   #
-  # pkg:gem/puma#lib/puma/configuration.rb:302
+  # pkg:gem/puma#lib/puma/configuration.rb:311
   def app_configured?; end
 
   # Call once all configuration (included from rackup files)
@@ -863,118 +949,133 @@ class Puma::Configuration
   #
   # This also calls load if it hasn't been called yet.
   #
-  # pkg:gem/puma#lib/puma/configuration.rb:278
+  # pkg:gem/puma#lib/puma/configuration.rb:285
   def clamp; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:259
+  # pkg:gem/puma#lib/puma/configuration.rb:266
   def config_files; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:208
+  # pkg:gem/puma#lib/puma/configuration.rb:213
   def configure; end
 
   # Return which environment we're running in
   #
-  # pkg:gem/puma#lib/puma/configuration.rb:326
+  # pkg:gem/puma#lib/puma/configuration.rb:335
   def environment; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:200
+  # pkg:gem/puma#lib/puma/configuration.rb:205
   def events; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:356
+  # pkg:gem/puma#lib/puma/configuration.rb:365
   def final_options; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:222
+  # pkg:gem/puma#lib/puma/configuration.rb:227
   def flatten; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:226
+  # pkg:gem/puma#lib/puma/configuration.rb:231
   def flatten!; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:200
+  # pkg:gem/puma#lib/puma/configuration.rb:205
   def hooks; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:253
+  # pkg:gem/puma#lib/puma/configuration.rb:260
   def load; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:330
+  # pkg:gem/puma#lib/puma/configuration.rb:339
   def load_plugin(name); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:202
+  # pkg:gem/puma#lib/puma/configuration.rb:207
   def options; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:200
+  # pkg:gem/puma#lib/puma/configuration.rb:205
   def plugins; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:231
+  # pkg:gem/puma#lib/puma/configuration.rb:236
   def puma_default_options(env = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:237
+  # pkg:gem/puma#lib/puma/configuration.rb:244
   def puma_options_from_env(env = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:306
+  # pkg:gem/puma#lib/puma/configuration.rb:315
   def rackup; end
 
   # @param key [:Symbol] hook to run
   # @param arg [Launcher, Int] `:before_restart` passes Launcher
   #
-  # pkg:gem/puma#lib/puma/configuration.rb:337
+  # pkg:gem/puma#lib/puma/configuration.rb:346
   def run_hooks(key, arg, log_writer, hook_data = T.unsafe(nil)); end
 
   private
 
-  # pkg:gem/puma#lib/puma/configuration.rb:216
+  # pkg:gem/puma#lib/puma/configuration.rb:221
   def initialize_copy(other); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:418
+  # pkg:gem/puma#lib/puma/configuration.rb:469
   def load_rackup; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:385
+  # pkg:gem/puma#lib/puma/configuration.rb:436
   def parse_workers(value); end
 
   # Load and use the normal Rack builder if we can, otherwise
   # fallback to our minimal version.
   #
-  # pkg:gem/puma#lib/puma/configuration.rb:398
+  # pkg:gem/puma#lib/puma/configuration.rb:449
   def rack_builder; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:375
+  # pkg:gem/puma#lib/puma/configuration.rb:426
   def require_processor_counter; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:436
+  # pkg:gem/puma#lib/puma/configuration.rb:401
+  def rewrite_unavailable_ipv6_binds!; end
+
+  # pkg:gem/puma#lib/puma/configuration.rb:487
+  def run_mode_hooks; end
+
+  # pkg:gem/puma#lib/puma/configuration.rb:498
   def set_conditional_default_options; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:441
+  # pkg:gem/puma#lib/puma/configuration.rb:503
   def warn_hooks; end
 
   class << self
-    # pkg:gem/puma#lib/puma/configuration.rb:367
+    # pkg:gem/puma#lib/puma/configuration.rb:373
+    def default_tcp_bind(port = T.unsafe(nil)); end
+
+    # pkg:gem/puma#lib/puma/configuration.rb:369
+    def default_tcp_host; end
+
+    # pkg:gem/puma#lib/puma/configuration.rb:377
+    def ipv6_interface_available?; end
+
+    # pkg:gem/puma#lib/puma/configuration.rb:393
     def random_token; end
 
-    # pkg:gem/puma#lib/puma/configuration.rb:360
+    # pkg:gem/puma#lib/puma/configuration.rb:386
     def temp_path; end
   end
 end
 
 # Injects the Configuration object into the env
 #
-# pkg:gem/puma#lib/puma/configuration.rb:288
+# pkg:gem/puma#lib/puma/configuration.rb:297
 class Puma::Configuration::ConfigMiddleware
-  # pkg:gem/puma#lib/puma/configuration.rb:289
+  # pkg:gem/puma#lib/puma/configuration.rb:298
   def initialize(config, app); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:294
+  # pkg:gem/puma#lib/puma/configuration.rb:303
   def call(env); end
 end
 
-# pkg:gem/puma#lib/puma/configuration.rb:132
+# pkg:gem/puma#lib/puma/configuration.rb:135
 Puma::Configuration::DEFAULTS = T.let(T.unsafe(nil), Hash)
 
-# pkg:gem/puma#lib/puma/configuration.rb:130
+# pkg:gem/puma#lib/puma/configuration.rb:133
 class Puma::Configuration::NotClampedError < ::StandardError; end
 
-# pkg:gem/puma#lib/puma/configuration.rb:129
+# pkg:gem/puma#lib/puma/configuration.rb:132
 class Puma::Configuration::NotLoadedError < ::StandardError; end
 
-# pkg:gem/puma#lib/puma/client.rb:16
+# pkg:gem/puma#lib/puma/client.rb:17
 class Puma::ConnectionError < ::RuntimeError; end
 
 # Frequently used constants when constructing requests or responses.  Many times
@@ -1386,7 +1487,7 @@ class Puma::DSL
   #     puts 'After booting...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:852
+  # pkg:gem/puma#lib/puma/dsl.rb:914
   def after_booted(&block); end
 
   # When `fork_worker` is enabled, code to run in Worker 0
@@ -1406,7 +1507,7 @@ class Puma::DSL
   #     puts 'After refork...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:919
+  # pkg:gem/puma#lib/puma/dsl.rb:981
   def after_refork(key = T.unsafe(nil), &block); end
 
   # Code to run after puma is stopped (works for both: single and clustered)
@@ -1416,10 +1517,10 @@ class Puma::DSL
   #     puts 'After stopping...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:867
+  # pkg:gem/puma#lib/puma/dsl.rb:929
   def after_stopped(&block); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:829
+  # pkg:gem/puma#lib/puma/dsl.rb:891
   def after_worker_boot(&block); end
 
   # Code to run in the master after a worker has been started. The worker's
@@ -1434,7 +1535,7 @@ class Puma::DSL
   #     puts 'After worker fork...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:825
+  # pkg:gem/puma#lib/puma/dsl.rb:887
   def after_worker_fork(&block); end
 
   # Code to run in the master right after a worker has stopped. The worker's
@@ -1447,7 +1548,7 @@ class Puma::DSL
   #     puts 'Worker crashed' unless worker_handle.process_status.success?
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:841
+  # pkg:gem/puma#lib/puma/dsl.rb:903
   def after_worker_shutdown(&block); end
 
   # Use an object or block as the rack application. This allows the
@@ -1488,7 +1589,7 @@ class Puma::DSL
   #     puts "Starting workers..."
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:746
+  # pkg:gem/puma#lib/puma/dsl.rb:808
   def before_fork(&block); end
 
   # When `fork_worker` is enabled, code to run in Worker 0
@@ -1511,7 +1612,7 @@ class Puma::DSL
   #
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:894
+  # pkg:gem/puma#lib/puma/dsl.rb:956
   def before_refork(key = T.unsafe(nil), &block); end
 
   # Code to run before doing a restart. This code should
@@ -1524,7 +1625,7 @@ class Puma::DSL
   #     puts 'On restart...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:447
+  # pkg:gem/puma#lib/puma/dsl.rb:448
   def before_restart(&block); end
 
   # Provide a block to be executed after a thread is trimmed from the thread
@@ -1547,7 +1648,7 @@ class Puma::DSL
   #     puts 'On thread exit...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:968
+  # pkg:gem/puma#lib/puma/dsl.rb:1030
   def before_thread_exit(&block); end
 
   # Provide a block to be executed just before a thread is added to the thread
@@ -1567,7 +1668,7 @@ class Puma::DSL
   #     puts 'On thread start...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:940
+  # pkg:gem/puma#lib/puma/dsl.rb:1002
   def before_thread_start(&block); end
 
   # Code to run in a worker when it boots to setup
@@ -1582,7 +1683,7 @@ class Puma::DSL
   #     puts 'Before worker boot...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:762
+  # pkg:gem/puma#lib/puma/dsl.rb:824
   def before_worker_boot(key = T.unsafe(nil), &block); end
 
   # Code to run in the master right before a worker is started. The worker's
@@ -1597,7 +1698,7 @@ class Puma::DSL
   #     puts 'Before worker fork...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:805
+  # pkg:gem/puma#lib/puma/dsl.rb:867
   def before_worker_fork(&block); end
 
   # Code to run immediately before a worker shuts
@@ -1615,14 +1716,15 @@ class Puma::DSL
   #     puts 'On worker shutdown...'
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:785
+  # pkg:gem/puma#lib/puma/dsl.rb:847
   def before_worker_shutdown(key = T.unsafe(nil), &block); end
 
   # Bind the server to +url+. "tcp://", "unix://" and "ssl://" are the only
   # accepted protocols. Multiple urls can be bound to, calling +bind+ does
   # not overwrite previous bindings.
   #
-  # The default is "tcp://0.0.0.0:9292".
+  # The default is "tcp://[::]:9292" when IPv6 interfaces are available,
+  # otherwise "tcp://0.0.0.0:9292".
   #
   # You can use query parameters within the url to specify options:
   #
@@ -1641,14 +1743,14 @@ class Puma::DSL
   # @example SSL cert for mutual TLS (mTLS)
   #   bind 'ssl://127.0.0.1:9292?key=key.key&cert=cert.pem&ca=ca.pem&verify_mode=force_peer'
   # @example Disable optimization for low latency
-  #   bind 'tcp://0.0.0.0:9292?low_latency=false'
+  #   bind 'tcp://[::]:9292?low_latency=false'
   # @example Socket permissions
   #   bind 'unix:///var/run/puma.sock?umask=0111'
   #
   # @see Puma::Runner#load_and_bind
   # @see Puma::Cluster#run
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:289
+  # pkg:gem/puma#lib/puma/dsl.rb:290
   def bind(url); end
 
   # Bind to (systemd) activated sockets, regardless of configured binds.
@@ -1674,21 +1776,36 @@ class Puma::DSL
   # @example Only bind to systemd activated sockets, ignoring other binds
   #   bind_to_activated_sockets 'only'
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:321
+  # pkg:gem/puma#lib/puma/dsl.rb:322
   def bind_to_activated_sockets(bind = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:389
+  # pkg:gem/puma#lib/puma/dsl.rb:390
   def clean_thread_locals(which = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:294
+  # pkg:gem/puma#lib/puma/dsl.rb:295
   def clear_binds!; end
+
+  # Code to run only in cluster mode.
+  # Runs after all config files are loaded.
+  #
+  # This can be called multiple times.
+  #
+  # @note Cluster mode only.
+  #
+  # @example
+  #   cluster do
+  #     prune_bundler
+  #   end
+  #
+  # pkg:gem/puma#lib/puma/dsl.rb:785
+  def cluster(&block); end
 
   # Pass in a custom logging class instance
   #
   # @example
   #   custom_logger Logger.new('t.log')
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:502
+  # pkg:gem/puma#lib/puma/dsl.rb:503
   def custom_logger(custom_logger); end
 
   # Show debugging info
@@ -1698,7 +1815,7 @@ class Puma::DSL
   # @example
   #   debug
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:513
+  # pkg:gem/puma#lib/puma/dsl.rb:514
   def debug; end
 
   # pkg:gem/puma#lib/puma/dsl.rb:157
@@ -1711,7 +1828,7 @@ class Puma::DSL
   # @example
   #   directory '/u/apps/lolcat'
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:997
+  # pkg:gem/puma#lib/puma/dsl.rb:1059
   def directory(dir); end
 
   # When shutting down, drain the accept socket of pending connections and
@@ -1720,7 +1837,7 @@ class Puma::DSL
   #
   # @see Puma::Server#graceful_shutdown
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:397
+  # pkg:gem/puma#lib/puma/dsl.rb:398
   def drain_on_shutdown(which = T.unsafe(nil)); end
 
   # Enable HTTP 103 Early Hints responses.
@@ -1730,7 +1847,7 @@ class Puma::DSL
   # @example
   #   early_hints
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:543
+  # pkg:gem/puma#lib/puma/dsl.rb:544
   def early_hints(answer = T.unsafe(nil)); end
 
   # When `true`, keep-alive connections are maintained on inbound requests.
@@ -1755,7 +1872,7 @@ class Puma::DSL
   # @example
   #   enable_keep_alives false
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1374
+  # pkg:gem/puma#lib/puma/dsl.rb:1440
   def enable_keep_alives(enabled = T.unsafe(nil)); end
 
   # Set the environment in which the rack's app will run. The value must be
@@ -1766,7 +1883,7 @@ class Puma::DSL
   # @example
   #   environment 'production'
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:409
+  # pkg:gem/puma#lib/puma/dsl.rb:410
   def environment(environment); end
 
   # When using prune_bundler, if extra runtime dependencies need to be loaded to
@@ -1783,7 +1900,7 @@ class Puma::DSL
   #
   # @see Puma::Launcher#extra_runtime_deps_directories
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1084
+  # pkg:gem/puma#lib/puma/dsl.rb:1147
   def extra_runtime_dependencies(answer = T.unsafe(nil)); end
 
   # Use a clean fiber per request which ensures a clean slate for fiber
@@ -1795,7 +1912,7 @@ class Puma::DSL
   # @example
   #   fiber_per_request
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:385
+  # pkg:gem/puma#lib/puma/dsl.rb:386
   def fiber_per_request(which = T.unsafe(nil)); end
 
   # Define how long the tcp socket stays open, if no data has been received.
@@ -1807,7 +1924,7 @@ class Puma::DSL
   #
   # @see Puma::Server.new
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:346
+  # pkg:gem/puma#lib/puma/dsl.rb:347
   def first_data_timeout(seconds); end
 
   # How long to wait for threads to stop when shutting them down.
@@ -1821,7 +1938,7 @@ class Puma::DSL
   #
   # @see Puma::Server#graceful_shutdown
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:424
+  # pkg:gem/puma#lib/puma/dsl.rb:425
   def force_shutdown_after(val = T.unsafe(nil)); end
 
   # When enabled, workers will be forked from worker 0 instead of from the master process.
@@ -1837,7 +1954,7 @@ class Puma::DSL
   # @note This is experimental.
   # @note Cluster mode only.
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1328
+  # pkg:gem/puma#lib/puma/dsl.rb:1394
   def fork_worker(after_requests = T.unsafe(nil)); end
 
   # pkg:gem/puma#lib/puma/dsl.rb:165
@@ -1856,7 +1973,7 @@ class Puma::DSL
   # @example
   #   http_content_length_limit 2_000_000_000
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1422
+  # pkg:gem/puma#lib/puma/dsl.rb:1488
   def http_content_length_limit(limit); end
 
   # If a new request is not received within this number of seconds, begin shutting down.
@@ -1868,7 +1985,7 @@ class Puma::DSL
   #
   # @see Puma::Server.new
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:372
+  # pkg:gem/puma#lib/puma/dsl.rb:373
   def idle_timeout(seconds); end
 
   # pkg:gem/puma#lib/puma/dsl.rb:161
@@ -1889,7 +2006,7 @@ class Puma::DSL
   #
   # @see https://github.com/socketry/nio4r/blob/main/lib/nio/selector.rb
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1393
+  # pkg:gem/puma#lib/puma/dsl.rb:1459
   def io_selector_backend(backend); end
 
   # Load additional configuration from a file.
@@ -1901,7 +2018,7 @@ class Puma::DSL
   # pkg:gem/puma#lib/puma/dsl.rb:254
   def load(file); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:563
+  # pkg:gem/puma#lib/puma/dsl.rb:564
   def log_formatter(&block); end
 
   # Enable request logging, the inverse of `quiet`.
@@ -1911,7 +2028,7 @@ class Puma::DSL
   # @example
   #   log_requests
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:493
+  # pkg:gem/puma#lib/puma/dsl.rb:494
   def log_requests(which = T.unsafe(nil)); end
 
   # Use +obj+ or +block+ as the low level error handler. This allows the
@@ -1922,13 +2039,31 @@ class Puma::DSL
   #     [200, {}, ["error page"]]
   #   end
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1024
+  # pkg:gem/puma#lib/puma/dsl.rb:1086
   def lowlevel_error_handler(obj = T.unsafe(nil), &block); end
 
   # @deprecated Use {#max_keep_alive} instead.
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1334
+  # pkg:gem/puma#lib/puma/dsl.rb:1400
   def max_fast_inline(num_of_requests); end
+
+  # Configure the max number of IO threads.
+  #
+  # When request handlers know the current requests will no longer use a significant amount
+  # of CPU, they can mark the current request as IO bound using <tt>env["puma.mark_as_io_bound"]</tt>.
+  #
+  # Threads marked as IO bound are allowed to go over the max thread limit.
+  #
+  # @example
+  #   threads 5
+  #   max_io_threads 5
+  #
+  # The above example allows for 5 regular threads and 5 IO threads to process requests concurrently.
+  # Any IO thread over the limit is counted as a regular thread, hence the above configuration also
+  # allows for 3 regular threads and 7 IO threads for example.
+  #
+  # pkg:gem/puma#lib/puma/dsl.rb:613
+  def max_io_threads(max); end
 
   # The number of requests a keep-alive client can submit before being closed.
   # Note that some applications (server to server) may benefit from a very high
@@ -1939,7 +2074,7 @@ class Puma::DSL
   # @example
   #   max_keep_alive 20
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1348
+  # pkg:gem/puma#lib/puma/dsl.rb:1414
   def max_keep_alive(num_of_requests); end
 
   # Ensures +STDOUT+ and +STDERR+ is immediately flushed to the underlying
@@ -1950,34 +2085,34 @@ class Puma::DSL
   # @example
   #   mutate_stdout_and_stderr_to_sync_on_write false
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1405
+  # pkg:gem/puma#lib/puma/dsl.rb:1471
   def mutate_stdout_and_stderr_to_sync_on_write(enabled = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:858
+  # pkg:gem/puma#lib/puma/dsl.rb:920
   def on_booted(&block); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:900
+  # pkg:gem/puma#lib/puma/dsl.rb:962
   def on_refork(key = T.unsafe(nil), &block); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:453
+  # pkg:gem/puma#lib/puma/dsl.rb:454
   def on_restart(&block); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:872
+  # pkg:gem/puma#lib/puma/dsl.rb:934
   def on_stopped(&block); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:974
+  # pkg:gem/puma#lib/puma/dsl.rb:1036
   def on_thread_exit(&block); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:946
+  # pkg:gem/puma#lib/puma/dsl.rb:1008
   def on_thread_start(&block); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:768
+  # pkg:gem/puma#lib/puma/dsl.rb:830
   def on_worker_boot(key = T.unsafe(nil), &block); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:811
+  # pkg:gem/puma#lib/puma/dsl.rb:873
   def on_worker_fork(&block); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:791
+  # pkg:gem/puma#lib/puma/dsl.rb:853
   def on_worker_shutdown(key = T.unsafe(nil), &block); end
 
   # Code to run out-of-band when the worker is idle.
@@ -1990,19 +2125,19 @@ class Puma::DSL
   #
   # This can be called multiple times to add several hooks.
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:986
+  # pkg:gem/puma#lib/puma/dsl.rb:1048
   def out_of_band(&block); end
 
   # Define how long persistent connections can be idle before Puma closes them.
   #
-  # The default is 20 seconds.
+  # The default is 65 seconds.
   #
   # @example
   #   persistent_timeout 30
   #
   # @see Puma::Server.new
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:359
+  # pkg:gem/puma#lib/puma/dsl.rb:360
   def persistent_timeout(seconds); end
 
   # Store the pid of the server in the file at "path".
@@ -2010,7 +2145,7 @@ class Puma::DSL
   # @example
   #   pidfile '/u/apps/lolcat/tmp/pids/puma.pid'
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:471
+  # pkg:gem/puma#lib/puma/dsl.rb:472
   def pidfile(path); end
 
   # Load the named plugin for use by this configuration.
@@ -2028,7 +2163,7 @@ class Puma::DSL
   # @example
   #   port 3000
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:332
+  # pkg:gem/puma#lib/puma/dsl.rb:333
   def port(port, host = T.unsafe(nil)); end
 
   # Preload the application before forking the workers; this conflicts with
@@ -2042,7 +2177,7 @@ class Puma::DSL
   # @example
   #   preload_app!
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1012
+  # pkg:gem/puma#lib/puma/dsl.rb:1074
   def preload_app!(answer = T.unsafe(nil)); end
 
   # This option is used to allow your app and its gems to be
@@ -2058,12 +2193,13 @@ class Puma::DSL
   # new Bundler context and thus can float around as the release
   # dictates.
   #
+  # @note Cluster mode only.
   # @note This is incompatible with +preload_app!+.
   # @note This is only supported for RubyGems 2.2+
   #
   # @see extra_runtime_dependencies
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1048
+  # pkg:gem/puma#lib/puma/dsl.rb:1111
   def prune_bundler(answer = T.unsafe(nil)); end
 
   # When set to true, workers accept all requests
@@ -2084,7 +2220,7 @@ class Puma::DSL
   #
   # @see Puma::Server
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1222
+  # pkg:gem/puma#lib/puma/dsl.rb:1285
   def queue_requests(answer = T.unsafe(nil)); end
 
   # Disable request logging, the inverse of `log_requests`.
@@ -2094,14 +2230,14 @@ class Puma::DSL
   # @example
   #   quiet
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:482
+  # pkg:gem/puma#lib/puma/dsl.rb:483
   def quiet(which = T.unsafe(nil)); end
 
   # Allows setting `env['rack.url_scheme']`.
   # Only necessary if X-Forwarded-Proto is not being set by your proxy
   # Normal values are 'http' or 'https'.
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:532
+  # pkg:gem/puma#lib/puma/dsl.rb:533
   def rack_url_scheme(scheme = T.unsafe(nil)); end
 
   # Load +path+ as a rackup file.
@@ -2111,7 +2247,7 @@ class Puma::DSL
   # @example
   #   rackup '/u/apps/lolcat/config.ru'
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:524
+  # pkg:gem/puma#lib/puma/dsl.rb:525
   def rackup(path); end
 
   # Raises a SignalException when SIGTERM is received. In environments where
@@ -2128,7 +2264,7 @@ class Puma::DSL
   # @see Puma::Launcher#setup_signals
   # @see Puma::Cluster#setup_signals
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1066
+  # pkg:gem/puma#lib/puma/dsl.rb:1129
   def raise_exception_on_sigterm(answer = T.unsafe(nil)); end
 
   # Command to use to restart Puma. This should be just how to
@@ -2138,7 +2274,7 @@ class Puma::DSL
   # @example
   #   restart_command '/u/app/lolcat/bin/restart_puma'
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:462
+  # pkg:gem/puma#lib/puma/dsl.rb:463
   def restart_command(cmd); end
 
   # pkg:gem/puma#lib/puma/dsl.rb:153
@@ -2174,15 +2310,20 @@ class Puma::DSL
   # @example
   #   set_remote_address :localhost
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1286
+  # pkg:gem/puma#lib/puma/dsl.rb:1352
   def set_remote_address(val = T.unsafe(nil)); end
 
   # When a shutdown is requested, the backtraces of all the
   # threads will be written to $stdout. This can help figure
   # out why shutdown is hanging.
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1230
-  def shutdown_debug(val = T.unsafe(nil)); end
+  # If `on_force` is true, the backtraces will be written only
+  # when the shutdown is forced i.e. not graceful.
+  #
+  # @see force_shutdown_after
+  #
+  # pkg:gem/puma#lib/puma/dsl.rb:1297
+  def shutdown_debug(val = T.unsafe(nil), on_force: T.unsafe(nil)); end
 
   # Disable warning message when running single mode with callback hook defined.
   #
@@ -2191,7 +2332,7 @@ class Puma::DSL
   # @example
   #   silence_fork_callback_warning
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:726
+  # pkg:gem/puma#lib/puma/dsl.rb:750
   def silence_fork_callback_warning; end
 
   # Disable warning message when running in cluster mode with a single worker.
@@ -2214,8 +2355,23 @@ class Puma::DSL
   # @example
   #  silence_single_worker_warning
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:715
+  # pkg:gem/puma#lib/puma/dsl.rb:739
   def silence_single_worker_warning; end
+
+  # Code to run only in single mode.
+  # Runs after all config files are loaded.
+  #
+  # This can be called multiple times.
+  #
+  # @note Single mode only.
+  #
+  # @example
+  #   single do
+  #     silence_fork_callback_warning
+  #   end
+  #
+  # pkg:gem/puma#lib/puma/dsl.rb:766
+  def single(&block); end
 
   # Instead of using +bind+ and manually constructing a URI like:
   #
@@ -2266,7 +2422,7 @@ class Puma::DSL
   #     verify_mode: verify_mode          # default 'none'
   #   }
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:647
+  # pkg:gem/puma#lib/puma/dsl.rb:671
   def ssl_bind(host, port, opts = T.unsafe(nil)); end
 
   # Use +path+ as the file to store the server info state. This is
@@ -2275,7 +2431,7 @@ class Puma::DSL
   # @example
   #   state_path '/u/apps/lolcat/tmp/pids/puma.state'
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:658
+  # pkg:gem/puma#lib/puma/dsl.rb:682
   def state_path(path); end
 
   # Use +permission+ to restrict permissions for the state file.  By convention,
@@ -2284,7 +2440,7 @@ class Puma::DSL
   # @example
   #   state_permission 0600
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:668
+  # pkg:gem/puma#lib/puma/dsl.rb:692
   def state_permission(permission); end
 
   # Redirect +STDOUT+ and +STDERR+ to files specified. The +append+ parameter
@@ -2297,7 +2453,7 @@ class Puma::DSL
   # @example
   #   stdout_redirect '/app/lolcat/log/stdout', '/app/lolcat/log/stderr', true
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:557
+  # pkg:gem/puma#lib/puma/dsl.rb:558
   def stdout_redirect(stdout = T.unsafe(nil), stderr = T.unsafe(nil), append = T.unsafe(nil)); end
 
   # Supported http methods, which will replace `Puma::Const::SUPPORTED_HTTP_METHODS`.
@@ -2321,7 +2477,7 @@ class Puma::DSL
   # @example Allows any method
   #   supported_http_methods :any
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1447
+  # pkg:gem/puma#lib/puma/dsl.rb:1513
   def supported_http_methods(methods); end
 
   # Additional text to display in process listing.
@@ -2336,7 +2492,7 @@ class Puma::DSL
   # @example
   #   tag ''
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1100
+  # pkg:gem/puma#lib/puma/dsl.rb:1163
   def tag(string); end
 
   # Configure the number of threads to use to answer requests.
@@ -2355,7 +2511,7 @@ class Puma::DSL
   # @example
   #   threads 5, 5
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:583
+  # pkg:gem/puma#lib/puma/dsl.rb:584
   def threads(min, max = T.unsafe(nil)); end
 
   # Maximum delay of worker accept loop.
@@ -2375,12 +2531,12 @@ class Puma::DSL
   # @see Puma::Server#handle_servers
   # @see Puma::ThreadPool#wait_for_less_busy_worker
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1252
+  # pkg:gem/puma#lib/puma/dsl.rb:1318
   def wait_for_less_busy_worker(val = T.unsafe(nil)); end
 
   # Change the default worker timeout for booting.
   #
-  # The default is the value of `worker_timeout`.
+  # The default is 60 seconds.
   #
   # @note Cluster mode only.
   #
@@ -2389,7 +2545,7 @@ class Puma::DSL
   #
   # @see Puma::Cluster::Worker#ping_timeout
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1157
+  # pkg:gem/puma#lib/puma/dsl.rb:1220
   def worker_boot_timeout(timeout); end
 
   # Change the default interval for checking workers.
@@ -2403,7 +2559,7 @@ class Puma::DSL
   #
   # @see Puma::Cluster#check_workers
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1115
+  # pkg:gem/puma#lib/puma/dsl.rb:1178
   def worker_check_interval(interval); end
 
   # Set the strategy for worker culling.
@@ -2424,7 +2580,7 @@ class Puma::DSL
   #
   # @see Puma::Cluster#cull_workers
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1194
+  # pkg:gem/puma#lib/puma/dsl.rb:1257
   def worker_culling_strategy(strategy); end
 
   # Set the timeout for worker shutdown.
@@ -2438,7 +2594,7 @@ class Puma::DSL
   #
   # @see Puma::Cluster::Worker#term
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1172
+  # pkg:gem/puma#lib/puma/dsl.rb:1235
   def worker_shutdown_timeout(timeout); end
 
   # Verifies that all workers have checked in to the master process within
@@ -2457,7 +2613,7 @@ class Puma::DSL
   #
   # @see Puma::Cluster::Worker#ping_timeout
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1135
+  # pkg:gem/puma#lib/puma/dsl.rb:1198
   def worker_timeout(timeout); end
 
   # How many worker processes to run. Typically this is set to the number of
@@ -2479,7 +2635,7 @@ class Puma::DSL
   #
   # @see Puma::Cluster
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:691
+  # pkg:gem/puma#lib/puma/dsl.rb:715
   def workers(count); end
 
   private
@@ -2487,10 +2643,10 @@ class Puma::DSL
   # To avoid adding cert_pem and key_pem as URI params, we store them on the
   # options[:store] from where Puma binder knows how to find and extract them.
   #
-  # pkg:gem/puma#lib/puma/dsl.rb:1463
+  # pkg:gem/puma#lib/puma/dsl.rb:1529
   def add_pem_values_to_options_store(opts); end
 
-  # pkg:gem/puma#lib/puma/dsl.rb:1479
+  # pkg:gem/puma#lib/puma/dsl.rb:1545
   def process_hook(options_key, key, block, cluster_only: T.unsafe(nil)); end
 
   class << self
@@ -2676,7 +2832,7 @@ end
 # pkg:gem/puma#lib/puma.rb:12
 class Puma::HttpParserError < ::StandardError; end
 
-# pkg:gem/puma#lib/puma/client.rb:18
+# pkg:gem/puma#lib/puma/client.rb:19
 class Puma::HttpParserError501 < ::IOError; end
 
 # pkg:gem/puma#lib/puma/io_buffer.rb:6
@@ -2933,7 +3089,7 @@ class Puma::Launcher
   # pkg:gem/puma#lib/puma/launcher.rb:338
   def log(str); end
 
-  # pkg:gem/puma#lib/puma/launcher.rb:493
+  # pkg:gem/puma#lib/puma/launcher.rb:492
   def log_config; end
 
   # pkg:gem/puma#lib/puma/launcher.rb:376
@@ -2985,31 +3141,31 @@ class Puma::Launcher::BundlePruner
 
   private
 
-  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:75
+  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:73
   def extra_runtime_deps_paths; end
 
-  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:99
+  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:97
   def log(str); end
 
-  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:71
+  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:69
   def paths_to_require_after_prune; end
 
-  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:87
+  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:85
   def puma_require_paths; end
 
-  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:57
+  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:55
   def puma_wild_path; end
 
-  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:95
+  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:93
   def require_paths_for_gem(gem_spec); end
 
-  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:48
+  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:46
   def require_rubygems_min_version!; end
 
-  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:91
+  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:89
   def spec_for_gem(gem_name); end
 
-  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:62
+  # pkg:gem/puma#lib/puma/launcher/bundle_pruner.rb:60
   def with_unbundled_env; end
 end
 
@@ -3028,7 +3184,7 @@ class Puma::LogWriter
   # and +text+ additional info
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/log_writer.rb:111
+  # pkg:gem/puma#lib/puma/log_writer.rb:117
   def connection_error(error, req, text = T.unsafe(nil)); end
 
   # pkg:gem/puma#lib/puma/log_writer.rb:31
@@ -3038,7 +3194,7 @@ class Puma::LogWriter
   def custom_logger=(_arg0); end
 
   # pkg:gem/puma#lib/puma/log_writer.rb:93
-  def debug(str); end
+  def debug(str = T.unsafe(nil), &block); end
 
   # pkg:gem/puma#lib/puma/log_writer.rb:89
   def debug?; end
@@ -3048,15 +3204,15 @@ class Puma::LogWriter
   # and +text+ additional info
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/log_writer.rb:143
+  # pkg:gem/puma#lib/puma/log_writer.rb:149
   def debug_error(error, req = T.unsafe(nil), text = T.unsafe(nil)); end
 
   # Write +str+ to +@stderr+
   #
-  # pkg:gem/puma#lib/puma/log_writer.rb:98
+  # pkg:gem/puma#lib/puma/log_writer.rb:104
   def error(str); end
 
-  # pkg:gem/puma#lib/puma/log_writer.rb:103
+  # pkg:gem/puma#lib/puma/log_writer.rb:109
   def format(str); end
 
   # pkg:gem/puma#lib/puma/log_writer.rb:31
@@ -3074,14 +3230,14 @@ class Puma::LogWriter
   # +error+ a parsing exception,
   # and +req+ the request.
   #
-  # pkg:gem/puma#lib/puma/log_writer.rb:118
+  # pkg:gem/puma#lib/puma/log_writer.rb:124
   def parse_error(error, req); end
 
   # An SSL error has occurred.
   # @param error <Puma::MiniSSL::SSLError>
   # @param ssl_socket <Puma::MiniSSL::Socket>
   #
-  # pkg:gem/puma#lib/puma/log_writer.rb:125
+  # pkg:gem/puma#lib/puma/log_writer.rb:131
   def ssl_error(error, ssl_socket); end
 
   # pkg:gem/puma#lib/puma/log_writer.rb:28
@@ -3094,7 +3250,7 @@ class Puma::LogWriter
   # +error+ an exception object, +req+ the request,
   # and +text+ additional info
   #
-  # pkg:gem/puma#lib/puma/log_writer.rb:135
+  # pkg:gem/puma#lib/puma/log_writer.rb:141
   def unknown_error(error, req = T.unsafe(nil), text = T.unsafe(nil)); end
 
   # pkg:gem/puma#lib/puma/log_writer.rb:70
@@ -3677,15 +3833,9 @@ end
 # #handle_request, which is called in Server#process_client.
 # @version 5.0.3
 #
-# pkg:gem/puma#lib/puma/request.rb:15
-module Puma::Request
+# pkg:gem/puma#lib/puma/response.rb:15
+module Puma::Response
   include ::Puma::Const
-
-  # @param env [Hash] see Puma::Client#env, from request
-  # @return [Puma::Const::PORT_443,Puma::Const::PORT_80]
-  #
-  # pkg:gem/puma#lib/puma/request.rb:284
-  def default_server_port(env); end
 
   # Takes the request contained in +client+, invokes the Rack application to construct
   # the response and writes it back to +client.io+.
@@ -3700,12 +3850,25 @@ module Puma::Request
   # elsewhere, i.e. the connection has been hijacked by the Rack application.
   #
   # Finally, it'll return +true+ on keep-alive connections.
+  # @param processor [Puma::ThreadPool::ProcessorThread]
   # @param client [Puma::Client]
   # @param requests [Integer]
   # @return [:close, :keep_alive, :async]
   #
-  # pkg:gem/puma#lib/puma/request.rb:52
-  def handle_request(client, requests); end
+  # pkg:gem/puma#lib/puma/response.rb:53
+  def handle_request(processor, client, requests); end
+
+  # @param header_key [#to_s]
+  # @return [Boolean]
+  #
+  # pkg:gem/puma#lib/puma/response.rb:377
+  def illegal_header_key?(header_key); end
+
+  # @param header_value [#to_s]
+  # @return [Boolean]
+  #
+  # pkg:gem/puma#lib/puma/response.rb:384
+  def illegal_header_value?(header_value); end
 
   # Assembles the headers and prepares the body for actually sending the
   # response via `#fast_write_response`.
@@ -3718,7 +3881,7 @@ module Puma::Request
   # @param client [Puma::Client]
   # @return [:close, :keep_alive, :async]
   #
-  # pkg:gem/puma#lib/puma/request.rb:173
+  # pkg:gem/puma#lib/puma/response.rb:144
   def prepare_response(status, headers, res_body, requests, client); end
 
   private
@@ -3733,7 +3896,7 @@ module Puma::Request
   # @paramn content_length [Integer
   # @raise [ConnectionError]
   #
-  # pkg:gem/puma#lib/puma/request.rb:331
+  # pkg:gem/puma#lib/puma/response.rb:287
   def fast_write_response(socket, body, io_buffer, chunked, content_length); end
 
   # Used to write 'early hints', 'no body' responses, 'hijacked' responses,
@@ -3745,58 +3908,21 @@ module Puma::Request
   # @param str [String] the string written to the io
   # @raise [ConnectionError]
   #
-  # pkg:gem/puma#lib/puma/request.rb:304
+  # pkg:gem/puma#lib/puma/response.rb:260
   def fast_write_str(socket, str); end
 
   # @param status [Integer] status from the app
   # @return [String] the text description from Puma::HTTP_STATUS_CODES
   #
-  # pkg:gem/puma#lib/puma/request.rb:586
+  # pkg:gem/puma#lib/puma/response.rb:414
   def fetch_status_code(status); end
-
-  # @param header_key [#to_s]
-  # @return [Boolean]
-  #
-  # pkg:gem/puma#lib/puma/request.rb:499
-  def illegal_header_key?(header_key); end
-
-  # @param header_value [#to_s]
-  # @return [Boolean]
-  #
-  # pkg:gem/puma#lib/puma/request.rb:506
-  def illegal_header_value?(header_value); end
-
-  # Given a Hash +env+ for the request read from +client+, add
-  # and fixup keys to comply with Rack's env guidelines.
-  # @param env [Hash] see Puma::Client#env, from request
-  # @param client [Puma::Client] only needed for Client#peerip
-  #
-  # pkg:gem/puma#lib/puma/request.rb:422
-  def normalize_env(env, client); end
-
-  # Fixup any headers with `,` in the name to have `_` now. We emit
-  # headers with `,` in them during the parse phase to avoid ambiguity
-  # with the `-` to `_` conversion for critical headers. But here for
-  # compatibility, we'll convert them back. This code is written to
-  # avoid allocation in the common case (ie there are no headers
-  # with `,` in their names), that's why it has the extra conditionals.
-  #
-  # @note If a normalized version of a `,` header already exists, we ignore
-  #       the `,` version. This prevents clobbering headers managed by proxies
-  #       but not by clients (Like X-Forwarded-For).
-  #
-  # @param env [Hash] see Puma::Client#env, from request, modifies in place
-  # @version 5.0.3
-  #
-  # pkg:gem/puma#lib/puma/request.rb:525
-  def req_env_post_parse(env); end
 
   # Used in the lambda for env[ `Puma::Const::EARLY_HINTS` ]
   # @param headers [Hash] the headers returned by the Rack application
   # @return [String]
   # @version 5.0.3
   #
-  # pkg:gem/puma#lib/puma/request.rb:565
+  # pkg:gem/puma#lib/puma/response.rb:393
   def str_early_hints(headers); end
 
   # Processes and write headers to the IOBuffer.
@@ -3811,7 +3937,7 @@ module Puma::Request
   # @return [Hash] resp_info
   # @version 5.0.3
   #
-  # pkg:gem/puma#lib/puma/request.rb:603
+  # pkg:gem/puma#lib/puma/response.rb:431
   def str_headers(env, status, headers, res_body, io_buffer, force_keep_alive); end
 end
 
@@ -3819,29 +3945,26 @@ end
 # then a single write from io_buffer. Larger sizes are written separately.
 # Also fixes max size of chunked file body read.
 #
-# pkg:gem/puma#lib/puma/request.rb:20
-Puma::Request::BODY_LEN_MAX = T.let(T.unsafe(nil), Integer)
+# pkg:gem/puma#lib/puma/response.rb:20
+Puma::Response::BODY_LEN_MAX = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/puma#lib/puma/request.rb:32
-Puma::Request::CUSTOM_STAT = T.let(T.unsafe(nil), String)
-
-# pkg:gem/puma#lib/puma/request.rb:278
-Puma::Request::HTTP_ON_VALUES = T.let(T.unsafe(nil), Hash)
+# pkg:gem/puma#lib/puma/response.rb:32
+Puma::Response::CUSTOM_STAT = T.let(T.unsafe(nil), String)
 
 # File body: smaller bodies are combined with io_buffer, then written to
 # socket.  Larger bodies are written separately using `copy_stream`
 #
-# pkg:gem/puma#lib/puma/request.rb:24
-Puma::Request::IO_BODY_MAX = T.let(T.unsafe(nil), Integer)
+# pkg:gem/puma#lib/puma/response.rb:24
+Puma::Response::IO_BODY_MAX = T.let(T.unsafe(nil), Integer)
 
 # Array body: elements are collected in io_buffer.  When io_buffer's size
 # exceeds value, they are written to the socket.
 #
-# pkg:gem/puma#lib/puma/request.rb:28
-Puma::Request::IO_BUFFER_LEN_MAX = T.let(T.unsafe(nil), Integer)
+# pkg:gem/puma#lib/puma/response.rb:28
+Puma::Response::IO_BUFFER_LEN_MAX = T.let(T.unsafe(nil), Integer)
 
-# pkg:gem/puma#lib/puma/request.rb:30
-Puma::Request::SOCKET_WRITE_ERR_MSG = T.let(T.unsafe(nil), String)
+# pkg:gem/puma#lib/puma/response.rb:30
+Puma::Response::SOCKET_WRITE_ERR_MSG = T.let(T.unsafe(nil), String)
 
 # Generic class that is used by `Puma::Cluster` and `Puma::Single` to
 # serve requests. This class spawns a new instance of `Puma::Server` via
@@ -3950,7 +4073,7 @@ Puma::STATUS_WITH_NO_ENTITY_BODY = T.let(T.unsafe(nil), Hash)
 # pkg:gem/puma#lib/puma/server.rb:32
 class Puma::Server
   include ::Puma::Const
-  include ::Puma::Request
+  include ::Puma::Response
 
   # Create a server for the rack app +app+.
   #
@@ -3972,13 +4095,13 @@ class Puma::Server
   # pkg:gem/puma#lib/puma/server.rb:76
   def initialize(app, events = T.unsafe(nil), options = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/server.rb:724
+  # pkg:gem/puma#lib/puma/server.rb:716
   def add_ssl_listener(host, port, ctx, optimize_for_latency = T.unsafe(nil), backlog = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/server.rb:720
+  # pkg:gem/puma#lib/puma/server.rb:712
   def add_tcp_listener(host, port, optimize_for_latency = T.unsafe(nil), backlog = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/server.rb:729
+  # pkg:gem/puma#lib/puma/server.rb:721
   def add_unix_listener(path, umask = T.unsafe(nil), mode = T.unsafe(nil), backlog = T.unsafe(nil)); end
 
   # pkg:gem/puma#lib/puma/server.rb:56
@@ -3997,7 +4120,7 @@ class Puma::Server
   # pkg:gem/puma#lib/puma/server.rb:228
   def backlog; end
 
-  # pkg:gem/puma#lib/puma/server.rb:676
+  # pkg:gem/puma#lib/puma/server.rb:668
   def begin_restart(sync = T.unsafe(nil)); end
 
   # pkg:gem/puma#lib/puma/server.rb:57
@@ -4008,10 +4131,10 @@ class Puma::Server
 
   # Handle various error types thrown by Client I/O operations.
   #
-  # pkg:gem/puma#lib/puma/server.rb:571
+  # pkg:gem/puma#lib/puma/server.rb:576
   def client_error(e, client, requests = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/server.rb:550
+  # pkg:gem/puma#lib/puma/server.rb:555
   def close_client_safely(client); end
 
   # pkg:gem/puma#lib/puma/server.rb:222
@@ -4019,7 +4142,7 @@ class Puma::Server
 
   # @!attribute [r] connected_ports
   #
-  # pkg:gem/puma#lib/puma/server.rb:734
+  # pkg:gem/puma#lib/puma/server.rb:769
   def connected_ports; end
 
   # 6 == Socket::IPPROTO_TCP
@@ -4044,16 +4167,16 @@ class Puma::Server
 
   # Wait for all outstanding requests to finish.
   #
-  # pkg:gem/puma#lib/puma/server.rb:620
+  # pkg:gem/puma#lib/puma/server.rb:633
   def graceful_shutdown; end
 
-  # pkg:gem/puma#lib/puma/server.rb:671
+  # pkg:gem/puma#lib/puma/server.rb:663
   def halt(sync = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/server.rb:452
+  # pkg:gem/puma#lib/puma/server.rb:457
   def handle_check; end
 
-  # pkg:gem/puma#lib/puma/server.rb:335
+  # pkg:gem/puma#lib/puma/server.rb:337
   def handle_servers; end
 
   # pkg:gem/puma#lib/puma/server.rb:147
@@ -4069,7 +4192,7 @@ class Puma::Server
 
   # A fallback rack response if +@app+ raises as exception.
   #
-  # pkg:gem/puma#lib/puma/server.rb:593
+  # pkg:gem/puma#lib/puma/server.rb:598
   def lowlevel_error(e, env, status = T.unsafe(nil)); end
 
   # pkg:gem/puma#lib/puma/server.rb:48
@@ -4078,7 +4201,7 @@ class Puma::Server
   # pkg:gem/puma#lib/puma/server.rb:48
   def min_threads; end
 
-  # pkg:gem/puma#lib/puma/server.rb:444
+  # pkg:gem/puma#lib/puma/server.rb:447
   def new_client(io, sock); end
 
   # pkg:gem/puma#lib/puma/server.rb:44
@@ -4104,7 +4227,7 @@ class Puma::Server
   # Given a connection on +client+, handle the incoming requests,
   # or queue the connection in the Reactor if no request is available.
   #
-  # This method is called from a ThreadPool worker thread.
+  # This method is called from a ThreadPool processor thread.
   #
   # This method supports HTTP Keep-Alive so it may, depending on if the client
   # indicates that it supports keep alive, wait for another request before
@@ -4112,8 +4235,8 @@ class Puma::Server
   #
   # Return true if one or more requests were processed.
   #
-  # pkg:gem/puma#lib/puma/server.rb:480
-  def process_client(client); end
+  # pkg:gem/puma#lib/puma/server.rb:485
+  def process_client(processor, client); end
 
   # This method is called from the Reactor thread when a queued Client receives data,
   # times out, or when the Reactor is shutting down.
@@ -4131,7 +4254,7 @@ class Puma::Server
   # The method checks to see if it has the full header and body with
   # the `Puma::Client#try_to_finish` method. If the full request has been sent,
   # then the request is passed to the ThreadPool (`@thread_pool << client`)
-  # so that a "worker thread" can pick up the request and begin to execute application logic.
+  # so that a "processor thread" can pick up the request and begin to execute application logic.
   # The Client is then removed from the reactor (return `true`).
   #
   # If a client object times out, a 408 response is written, its connection is closed,
@@ -4144,7 +4267,7 @@ class Puma::Server
   # (return `false`). When the client sends more data to the socket the `Puma::Client` object
   # will wake up and again be checked to see if it's ready to be passed to the thread pool.
   #
-  # pkg:gem/puma#lib/puma/server.rb:319
+  # pkg:gem/puma#lib/puma/server.rb:321
   def reactor_wakeup(client); end
 
   # @todo the following may be deprecated in the future
@@ -4157,7 +4280,7 @@ class Puma::Server
   # pkg:gem/puma#lib/puma/server.rb:49
   def requests_count; end
 
-  # pkg:gem/puma#lib/puma/server.rb:711
+  # pkg:gem/puma#lib/puma/server.rb:703
   def reset_max; end
 
   # Runs the server.
@@ -4174,7 +4297,7 @@ class Puma::Server
   # pkg:gem/puma#lib/puma/server.rb:233
   def running; end
 
-  # pkg:gem/puma#lib/puma/server.rb:681
+  # pkg:gem/puma#lib/puma/server.rb:673
   def shutting_down?; end
 
   # Returns a hash of stats about the running server for reporting purposes.
@@ -4182,13 +4305,13 @@ class Puma::Server
   # @!attribute [r] stats
   # @return [Hash] hash containing stat info from `Server` and `ThreadPool`
   #
-  # pkg:gem/puma#lib/puma/server.rb:702
+  # pkg:gem/puma#lib/puma/server.rb:694
   def stats; end
 
-  # Stops the acceptor thread and then causes the worker threads to finish
+  # Stops the acceptor thread and then causes the processor threads to finish
   # off the request queue before finally exiting.
   #
-  # pkg:gem/puma#lib/puma/server.rb:666
+  # pkg:gem/puma#lib/puma/server.rb:658
   def stop(sync = T.unsafe(nil)); end
 
   # pkg:gem/puma#lib/puma/server.rb:45
@@ -4197,18 +4320,47 @@ class Puma::Server
   # pkg:gem/puma#lib/puma/server.rb:199
   def uncork_socket(socket); end
 
+  # Updates the minimum and maximum number of threads in the thread pool.
+  #
+  # This method allows dynamic adjustment of the thread pool size while the server
+  # is running. It validates the provided values and updates both the thread pool
+  # and the server's thread configuration.
+  #
+  # @param min [Integer] The minimum number of threads to maintain in the pool.
+  #   Defaults to the current minimum if not specified. Must be greater than 0
+  #   and less than or equal to max.
+  # @param max [Integer] The maximum number of threads allowed in the pool.
+  #   Defaults to the current maximum if not specified. Must be greater than or
+  #   equal to min.
+  #
+  # @return [void]
+  #
+  # @note If validation fails, a warning message is logged and no changes are made.
+  #
+  # @example Update both min and max threads
+  #   server.update_thread_pool_min_max(min: 2, max: 8)
+  #
+  # @example Update only the minimum threads
+  #   server.update_thread_pool_min_max(min: 4)
+  #
+  # @example Update only the maximum threads
+  #   server.update_thread_pool_min_max(max: 16)
+  #
+  # pkg:gem/puma#lib/puma/server.rb:751
+  def update_thread_pool_min_max(min: T.unsafe(nil), max: T.unsafe(nil)); end
+
   # Triggers a client timeout if the thread-pool shuts down
   # during execution of the provided block.
   #
-  # pkg:gem/puma#lib/puma/server.rb:562
+  # pkg:gem/puma#lib/puma/server.rb:567
   def with_force_shutdown(client, &block); end
 
   private
 
-  # pkg:gem/puma#lib/puma/server.rb:649
+  # pkg:gem/puma#lib/puma/server.rb:641
   def notify_safely(message); end
 
-  # pkg:gem/puma#lib/puma/server.rb:612
+  # pkg:gem/puma#lib/puma/server.rb:617
   def response_to_error(client, requests, err, status_code); end
 
   class << self
@@ -4234,14 +4386,44 @@ end
 # pkg:gem/puma#lib/puma/server.rb:33
 module Puma::Server::FiberPerRequest
   # pkg:gem/puma#lib/puma/server.rb:34
-  def handle_request(client, requests); end
+  def handle_request(processor, client, requests); end
 end
 
 # List of methods invoked by #stats.
 # @version 5.0.0
 #
-# pkg:gem/puma#lib/puma/server.rb:687
+# pkg:gem/puma#lib/puma/server.rb:679
 Puma::Server::STAT_METHODS = T.let(T.unsafe(nil), Array)
+
+# ServerPluginControl provides a control interface for server plugins to
+# interact with and manage server settings dynamically.
+#
+# This class acts as a facade between plugins and the Puma server,
+# allowing plugins to safely modify server configuration and thread pool
+# settings without direct access to the server's internal state.
+#
+# pkg:gem/puma#lib/puma/server_plugin_control.rb:9
+class Puma::ServerPluginControl
+  # pkg:gem/puma#lib/puma/server_plugin_control.rb:10
+  def initialize(server); end
+
+  # Returns the maximum number of threads in the thread pool.
+  #
+  # pkg:gem/puma#lib/puma/server_plugin_control.rb:15
+  def max_threads; end
+
+  # Returns the minimum number of threads in the thread pool.
+  #
+  # pkg:gem/puma#lib/puma/server_plugin_control.rb:20
+  def min_threads; end
+
+  # Updates the minimum and maximum number of threads in the thread pool.
+  #
+  # @see Puma::Server#update_thread_pool_min_max
+  #
+  # pkg:gem/puma#lib/puma/server_plugin_control.rb:28
+  def update_thread_pool_min_max(min: T.unsafe(nil), max: T.unsafe(nil)); end
+end
 
 # This class is instantiated by the `Puma::Launcher` and used
 # to boot and serve a Ruby application when no puma "workers" are needed
@@ -4286,7 +4468,7 @@ end
 # Each thread in the pool has an internal loop where it pulls a request from the `@todo` array
 # and processes it.
 #
-# pkg:gem/puma#lib/puma/thread_pool.rb:23
+# pkg:gem/puma#lib/puma/thread_pool.rb:24
 class Puma::ThreadPool
   # Maintain a minimum of +min+ and maximum of +max+ threads
   # in the pool.
@@ -4294,53 +4476,70 @@ class Puma::ThreadPool
   # The block passed is the work that will be performed in each
   # thread.
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:40
+  # pkg:gem/puma#lib/puma/thread_pool.rb:86
   def initialize(name, options = T.unsafe(nil), server: T.unsafe(nil), &block); end
 
   # Add +work+ to the todo list for a Thread to pickup and process.
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:261
+  # pkg:gem/puma#lib/puma/thread_pool.rb:335
   def <<(work); end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:342
+  # pkg:gem/puma#lib/puma/thread_pool.rb:421
   def auto_reap!(timeout = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:337
+  # pkg:gem/puma#lib/puma/thread_pool.rb:416
   def auto_trim!(timeout = T.unsafe(nil)); end
 
   # How many objects have yet to be processed by the pool?
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:112
+  # pkg:gem/puma#lib/puma/thread_pool.rb:163
   def backlog; end
 
   # The maximum size of the backlog
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:118
+  # pkg:gem/puma#lib/puma/thread_pool.rb:169
   def backlog_max; end
 
   # @!attribute [r] busy_threads
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:129
+  # pkg:gem/puma#lib/puma/thread_pool.rb:180
   def busy_threads; end
+
+  # Must be called with @mutex held!
+  #
+  # pkg:gem/puma#lib/puma/thread_pool.rb:328
+  def can_spawn_processor?; end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:139
+  def max; end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:139
+  def max=(_arg0); end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:139
+  def min; end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:139
+  def min=(_arg0); end
 
   # seconds
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:32
+  # pkg:gem/puma#lib/puma/thread_pool.rb:78
   def out_of_band_running; end
 
   # @!attribute [r] pool_capacity
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:123
+  # pkg:gem/puma#lib/puma/thread_pool.rb:174
   def pool_capacity; end
 
   # If there are dead threads in the pool make them go away while decreasing
   # spawned counter so that new healthy threads could be created again.
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:295
+  # pkg:gem/puma#lib/puma/thread_pool.rb:378
   def reap; end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:106
+  # pkg:gem/puma#lib/puma/thread_pool.rb:157
   def reset_max; end
 
   # Tell all threads in the pool to exit and wait for them to finish.
@@ -4348,84 +4547,126 @@ class Puma::ThreadPool
   # Next, wait an extra +@shutdown_grace_time+ seconds then force-kill remaining
   # threads. Finally, wait 1 second for remaining threads to exit.
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:365
-  def shutdown(timeout = T.unsafe(nil)); end
+  # pkg:gem/puma#lib/puma/thread_pool.rb:444
+  def shutdown(timeout); end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:89
+  # pkg:gem/puma#lib/puma/thread_pool.rb:354
+  def spawn_thread_if_needed; end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:138
   def spawned; end
 
   # generate stats hash so as not to perform multiple locks
   # @return [Hash] hash containing stat info from ThreadPool
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:93
+  # pkg:gem/puma#lib/puma/thread_pool.rb:143
   def stats; end
 
   # If there are any free threads in the pool, tell one to go ahead
   # and exit. If +force+ is true, then a trim request is requested
   # even if all threads are being utilized.
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:283
+  # pkg:gem/puma#lib/puma/thread_pool.rb:366
   def trim(force = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:89
+  # pkg:gem/puma#lib/puma/thread_pool.rb:138
   def trim_requested; end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:245
+  # pkg:gem/puma#lib/puma/thread_pool.rb:309
   def wait_while_out_of_band_running; end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:89
+  # pkg:gem/puma#lib/puma/thread_pool.rb:138
   def waiting; end
 
   # Allows ThreadPool::ForceShutdown to be raised within the
   # provided block if the thread is forced to shutdown during execution.
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:349
+  # pkg:gem/puma#lib/puma/thread_pool.rb:428
   def with_force_shutdown; end
 
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:254
+  # pkg:gem/puma#lib/puma/thread_pool.rb:318
   def with_mutex(&block); end
 
   private
 
+  # pkg:gem/puma#lib/puma/thread_pool.rb:502
+  def shutdown_debug(message); end
+
   # Must be called with @mutex held!
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:137
+  # pkg:gem/puma#lib/puma/thread_pool.rb:188
   def spawn_thread; end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:211
+  # pkg:gem/puma#lib/puma/thread_pool.rb:275
   def trigger_before_thread_exit_hooks; end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:196
+  # pkg:gem/puma#lib/puma/thread_pool.rb:260
   def trigger_before_thread_start_hooks; end
 
   # @version 5.0.0
   #
-  # pkg:gem/puma#lib/puma/thread_pool.rb:227
+  # pkg:gem/puma#lib/puma/thread_pool.rb:291
   def trigger_out_of_band_hook; end
 end
 
-# pkg:gem/puma#lib/puma/thread_pool.rb:310
+# pkg:gem/puma#lib/puma/thread_pool.rb:389
 class Puma::ThreadPool::Automaton
-  # pkg:gem/puma#lib/puma/thread_pool.rb:311
+  # pkg:gem/puma#lib/puma/thread_pool.rb:390
   def initialize(pool, timeout, thread_name, message); end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:319
+  # pkg:gem/puma#lib/puma/thread_pool.rb:398
   def start!; end
 
-  # pkg:gem/puma#lib/puma/thread_pool.rb:331
+  # pkg:gem/puma#lib/puma/thread_pool.rb:410
   def stop; end
 end
 
-# pkg:gem/puma#lib/puma/thread_pool.rb:24
+# pkg:gem/puma#lib/puma/thread_pool.rb:25
 class Puma::ThreadPool::ForceShutdown < ::RuntimeError; end
+
+# pkg:gem/puma#lib/puma/thread_pool.rb:28
+class Puma::ThreadPool::ProcessorThread
+  # pkg:gem/puma#lib/puma/thread_pool.rb:32
+  def initialize(pool); end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:64
+  def [](key); end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:52
+  def alive?; end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:56
+  def join(*, **, &); end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:60
+  def kill(*, **, &); end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:38
+  def mark_as_io_thread!; end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:30
+  def marked_as_io_thread=(_arg0); end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:48
+  def marked_as_io_thread?; end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:68
+  def raise(*, **, &); end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:29
+  def thread; end
+
+  # pkg:gem/puma#lib/puma/thread_pool.rb:29
+  def thread=(_arg0); end
+end
 
 # How long, after raising the ForceShutdown of a thread during
 # forced shutdown mode, to wait for the thread to try and finish
 # up its work before leaving the thread to die on the vine.
 #
-# pkg:gem/puma#lib/puma/thread_pool.rb:30
+# pkg:gem/puma#lib/puma/thread_pool.rb:76
 Puma::ThreadPool::SHUTDOWN_GRACE_TIME = T.let(T.unsafe(nil), Integer)
 
 # pkg:gem/puma#lib/puma/plugin.rb:4
@@ -4467,36 +4708,36 @@ class Puma::UnsupportedOption < ::RuntimeError; end
 # The "default" options can be set via procs. These are resolved during runtime
 # via calls to `finalize_values`
 #
-# pkg:gem/puma#lib/puma/configuration.rb:38
+# pkg:gem/puma#lib/puma/configuration.rb:41
 class Puma::UserFileDefaultOptions
-  # pkg:gem/puma#lib/puma/configuration.rb:39
+  # pkg:gem/puma#lib/puma/configuration.rb:42
   def initialize(user_options, default_options); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:47
+  # pkg:gem/puma#lib/puma/configuration.rb:50
   def [](key); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:51
+  # pkg:gem/puma#lib/puma/configuration.rb:54
   def []=(key, value); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:63
+  # pkg:gem/puma#lib/puma/configuration.rb:66
   def all_of(key); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:45
+  # pkg:gem/puma#lib/puma/configuration.rb:48
   def default_options; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:55
+  # pkg:gem/puma#lib/puma/configuration.rb:58
   def fetch(key, default_value = T.unsafe(nil)); end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:45
+  # pkg:gem/puma#lib/puma/configuration.rb:48
   def file_options; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:87
+  # pkg:gem/puma#lib/puma/configuration.rb:90
   def final_options; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:79
+  # pkg:gem/puma#lib/puma/configuration.rb:82
   def finalize_values; end
 
-  # pkg:gem/puma#lib/puma/configuration.rb:45
+  # pkg:gem/puma#lib/puma/configuration.rb:48
   def user_options; end
 end
 
