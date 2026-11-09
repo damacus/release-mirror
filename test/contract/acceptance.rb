@@ -1,5 +1,5 @@
 # Standalone HTTP contract: no application imports. Requires an isolated catalogue
-# and a global add/edit/delete API token in CONTRACT_TOKEN_FILE. Never run on live data.
+# and a global administrator API token in CONTRACT_TOKEN_FILE. Never run on live data.
 require 'net/http'
 require 'json'
 require 'uri'

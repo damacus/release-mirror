@@ -30,7 +30,7 @@ Copy [config/example.json](config/example.json) to an untracked config file. Set
 - **Human API:** configure a Zitadel API client with Basic-authenticated introspection. Both opaque and JWT access tokens are introspected. The response must confirm an active Bearer access token, exact issuer, intended audience, subject and unexpired lifetime. ID tokens are not API credentials. Other issuers can be used if they implement this response contract.
 - **Bootstrap:** explicitly set `bootstrap` to a human issuer and user ID. There is no first-login-wins behaviour. This configured identity retains administration until configuration changes; it is not a removable database grant.
 
-Global `add` permits service creation; `add`, `edit` and `delete` are independent capabilities over releases. A scoped writer cannot create another alias. `admin` includes catalogue operations and permission management within its scope. Global admin can manage all scopes; service admin cannot grant global rights. Grants apply immediately to subsequent requests.
+There are two roles: a human global `admin` can manage services, releases and grants; a workload `publish` grant allows a repository to add or update releases for one existing service. Publishers cannot delete releases, create services or manage grants. Existing granular grants must be replaced with the appropriate role. Grants apply immediately to subsequent requests.
 
 The permission dashboard accepts human subjects or workload repository IDs. Only trusted issuer configuration determines which credentials can authenticate; creating a grant cannot add a trusted issuer.
 

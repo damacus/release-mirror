@@ -228,7 +228,11 @@ module ReleaseMirror
       erb :permissions
     end
     post '/permissions' do
-      store.grant(identity, {'identity' => {'kind' => params['kind'], 'issuer' => params['issuer'], 'subject' => params['subject']}, 'scope' => params['scope'], 'actions' => Array(params['actions'])})
+      role = params['role']
+      raise Error unless %w[admin publish].include?(role)
+      kind = role == 'admin' ? 'human' : 'workload'
+      scope = role == 'admin' ? '*' : params['scope']
+      store.grant(identity, {'identity' => {'kind' => kind, 'issuer' => params['issuer'], 'subject' => params['subject']}, 'scope' => scope, 'actions' => [role]})
       redirect "/permissions?scope=#{CGI.escape(params['scope'])}", 303
     end
     post '/permissions/:id/delete' do
@@ -267,10 +271,10 @@ module ReleaseMirror
         use BrowserSessions, key: 'release_mirror', secret: secret, secure: secure, httponly: true, same_site: :lax, expire_after: 3600
         use Boundary, config
         if (provider = config['browserOidc'])
-          uri = URI(provider['issuer'])
-          use LazyBrowserOIDC, issuer: provider['issuer'], discovery: true, scope: [:openid], response_type: 'code', require_state: true, send_state: true, send_nonce: true, pkce: true,
+          use LazyBrowserOIDC, issuer: provider['issuer'], scope: [:openid], response_type: 'code', require_state: true, send_nonce: true, pkce: true, fetch_user_info: false,
             client_signing_alg: provider.fetch('signingAlgorithm', 'RS256'),
-            client_options: {identifier: provider['clientId'], secret: ENV.fetch(provider['clientSecretEnv']), scheme: uri.scheme, host: uri.host, port: uri.port, redirect_uri: "#{config['publicUrl'].delete_suffix('/')}/auth/oidc/callback"}
+            fixed_redirect_uri: "#{config['publicUrl'].delete_suffix('/')}/auth/oidc/callback",
+            client_options: {identifier: provider['clientId'], secret: ENV.fetch(provider['clientSecretEnv']), config_endpoint: "#{provider['issuer'].delete_suffix('/')}/.well-known/openid-configuration"}
         end
         run klass
       end.to_app

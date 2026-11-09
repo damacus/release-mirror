@@ -23,10 +23,10 @@ Human login SHALL use OIDC. Human API calls SHALL use validated access tokens, i
 - **THEN** they can browse but cannot mutate data or permissions
 
 ### Requirement: Explicit capabilities
-Grants SHALL support global write, service-scoped full editing and service-scoped restricted add/edit/delete capabilities, with separate administration. Global add permission SHALL permit alias creation; scoped grants SHALL NOT implicitly create or access other services.
+Grants SHALL support human global administrators and workload publishers scoped to an existing service. Publishers SHALL be able to add and update releases, but SHALL NOT delete releases, create services or administer permissions. Legacy granular and scoped administrator grants SHALL NOT grant access.
 
-#### Scenario: Add-only writer
-- **WHEN** a service add-only writer attempts to edit or delete an existing tag
+#### Scenario: Publisher deletion denied
+- **WHEN** a service publisher attempts to delete an existing tag
 - **THEN** access is forbidden
 
 #### Scenario: Scoped alias creation denied
