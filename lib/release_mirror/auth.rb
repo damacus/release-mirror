@@ -1,3 +1,4 @@
+# typed: true
 require 'jwt'
 require 'net/http'
 require 'uri'
@@ -7,6 +8,8 @@ require_relative 'validation'
 
 module ReleaseMirror
   class Auth
+    extend T::Sig
+    sig { params(config: T::Hash[String, T.untyped], transport: T.untyped).void }
     def initialize(config, transport: Auth.method(:http_json))
       @config = config
       @transport = transport
@@ -35,6 +38,7 @@ module ReleaseMirror
       raise Error.new('Authentication unavailable', 503)
     end
 
+    sig { params(token: T.untyped).returns(T::Hash[String, T.untyped]) }
     def authenticate(token)
       deny unless token.is_a?(String) && token.bytesize.between?(1, 16384) && /\A[A-Za-z0-9._~+\/-]+=*\z/.match?(token)
       if token.count('.') == 2
@@ -47,6 +51,7 @@ module ReleaseMirror
       deny
     end
 
+    sig { params(token: String, trusted: T::Hash[String, T.untyped]).returns(T::Hash[String, T.untyped]) }
     def workload(token, trusted)
       payload, header = JWT.decode(token, nil, true,
         algorithms: trusted.fetch('algorithms', ['RS256']),
@@ -65,6 +70,7 @@ module ReleaseMirror
       deny
     end
 
+    sig { params(trusted: T::Hash[String, T.untyped]).returns(T::Hash[String, T.untyped]) }
     def keys(trusted)
       @mutex.synchronize do
         entry = @keys[trusted['issuer']]
@@ -76,6 +82,7 @@ module ReleaseMirror
       end
     end
 
+    sig { params(token: String).returns(T::Hash[String, T.untyped]) }
     def human(token)
       provider = @config['humanApi']
       deny unless provider
@@ -94,6 +101,7 @@ module ReleaseMirror
       deny
     end
 
+    sig { returns(T.noreturn) }
     def deny = raise(Error.new('Invalid credential', 401))
   end
 end
