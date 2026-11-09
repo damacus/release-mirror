@@ -79,7 +79,8 @@ module ReleaseMirror
       end
       status, headers, result = @app.call(env)
       headers['x-content-type-options'] = 'nosniff'
-      headers['referrer-policy'] = 'no-referrer'
+      # Keep form POST origins without exposing callback query strings in referrers.
+      headers['referrer-policy'] = 'strict-origin'
       headers['content-security-policy'] = "default-src 'none'; style-src 'self'; form-action 'self' #{@origin.scheme == 'https' ? 'https:' : 'http: https:'}; frame-ancestors 'none'; base-uri 'none'"
       headers['cache-control'] = request.path.start_with?('/api/v1/services', '/api/v1/export') && %w[GET HEAD].include?(request.request_method) ? 'public, max-age=0, must-revalidate' : 'no-store'
       [status, headers, result]
