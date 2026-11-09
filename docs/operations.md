@@ -3,7 +3,8 @@
 ## Container releases
 
 Release Please maintains a release pull request from conventional commits on
-`main`; merging that pull request creates the GitHub release and tag. The first
+`main`. Each release pull request updates `lib/release_mirror/version.rb` and
+`CHANGELOG.md`; merging it creates the GitHub release and tag. The first
 release is configured as `v0.1.0`. The GitHub App creates the tag, which
 triggers the container workflow. Check the container workflow result and its
 digest before deploying; a GitHub release alone does not prove the image was
