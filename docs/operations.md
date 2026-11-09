@@ -4,6 +4,8 @@
 
 Run one Puma process with one mounted SQLite directory. Put an HTTPS reverse proxy in front, configure `publicUrl` to the exact external origin, and expose the container only to that proxy. Mount an operator-owned JSON config read-only and inject secrets through your deployment's secret manager. The application has no installation-specific hostname or provider requirement.
 
+The reverse proxy must forward the configured public host in the HTTP Host header. Client-supplied Forwarded and X-Forwarded-Host headers must be stripped or overwritten at the proxy.
+
 Do not enable request-body, Authorization-header, cookie or query-string logging in the proxy, app server, identity client or error collector. OAuth callback queries contain short-lived codes and state. App responses and configured diagnostics are deliberately generic. Provider endpoints must use HTTPS; workload JWKS and human introspection endpoints come exclusively from operator configuration. The browser client discovers endpoints only from its configured issuer.
 
 Use request-size limits (1 MiB), connection/read timeouts and normal traffic controls at the proxy as well as in the app. Public directories and tag lists are intentionally discoverable. No private information belongs in aliases, tag strings, digests or platforms.

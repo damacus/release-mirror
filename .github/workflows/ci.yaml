@@ -8,12 +8,38 @@ jobs:
   behaviour:
     runs-on: ubuntu-latest
     steps:
+      - name: Monitor runner activity
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: block
+          allowed-endpoints: >-
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            rubygems.org:443
+            index.rubygems.org:443
+            registry.npmjs.org:443
+            nodejs.org:443
+            registry-1.docker.io:443
+            auth.docker.io:443
+            production.cloudflare.docker.com:443
+            production.cloudfront.docker.com:443
+            deb.debian.org:80
+            deb.debian.org:443
       - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
       - uses: ruby/setup-ruby@v1.338.0
         with:
           ruby-version: '4.0.9'
           bundler-cache: true
       - run: bundle exec rake test
+      - name: Scan application templates with Brakeman
+        run: bundle exec brakeman --force --no-pager --quiet
+      - name: Audit Ruby dependency advisories
+        run: bundle exec bundle-audit check --update
       - uses: actions/setup-node@v7.1.0
         with:
           node-version: '26.13.0'
