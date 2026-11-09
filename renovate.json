@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "lockFileMaintenance": {"enabled": true},
+  "packageRules": [
+    {
+      "description": "Keep the Ruby runtime pins and image aligned",
+      "matchPackageNames": ["ruby", "ruby-version"],
+      "matchDatasources": ["ruby-version", "docker"],
+      "groupName": "Ruby runtime"
+    },
+    {
+      "description": "Keep the Node runtime pins aligned",
+      "matchPackageNames": ["node", "actions/node-versions"],
+      "matchDatasources": ["node-version", "github-releases"],
+      "groupName": "Node runtime"
+    }
+  ]
+}
