@@ -9,14 +9,32 @@ public service alias, tag and digest.
 
 ## Configure a consumer
 
-1. Start from the <%= link_to 'Renovate configuration', repository_file('examples/renovate/renovate.json') %>
-   and <%= link_to 'synthetic image references', repository_file('examples/renovate/images.yaml') %>.
-2. Replace `https://catalogue.example.test` with your catalogue origin and the
-   synthetic consumer references with your own image references.
-3. Set the dependency name used by the custom datasource to the existing public
-   service alias, such as `widget`.
-4. Run Renovate against an isolated consumer and review its proposed tag and
-   digest update before enabling it on a real repository.
+Add this `renovate.json` to a consumer repository:
+
+```json
+<%= File.read(File.expand_path('../../examples/renovate/renovate.json', root)).strip %>
+```
+
+Replace `https://catalogue.example.test` with your catalogue origin. This
+standalone example enables only the custom regex manager; if you already use
+Renovate, merge the `customManagers`, `customDatasources` and `packageRules`
+into your existing configuration and preserve the managers you need.
+
+Then add an `images.yaml` file (or adapt the manager's `managerFilePatterns` to
+your existing file):
+
+```yaml
+# release-mirror: widget versioning=semver
+image: registry.example.test/private/widget:v1.0.0@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+```
+
+Replace `widget` in the comment with your existing public service alias, and
+replace the image reference, tag and digest with the real values you use. The
+comment must remain immediately above the `image` line. Run Renovate against
+an isolated consumer and review its proposed update before enabling it on a
+real repository. The full <%= link_to 'configuration', repository_file('examples/renovate/renovate.json') %>
+and <%= link_to 'moving-tag example', repository_file('examples/renovate/images.yaml') %>
+are also available in the repository.
 
 The feed is `GET /api/v1/services/widget/renovate`. Each record supplies the
 actual tag as `version`, the complete digest as `digest` and a
