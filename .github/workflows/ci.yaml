@@ -1,33 +1,22 @@
 name: Verify catalogue
 on:
   push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'openspec/**'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'LICENSE*'
+      - '.github/workflows/docs.yaml'
   pull_request:
 permissions:
   contents: read
+  pull-requests: read
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      application: ${{ steps.paths.outputs.application }}
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Detect application changes
-        id: paths
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: ruby .github/scripts/application_changes.rb
   behaviour:
-    needs: changes
-    if: always() && (needs.changes.result != 'success' || needs.changes.outputs.application == 'true')
     runs-on: ubuntu-latest
     steps:
-      - name: Require successful change detection
-        if: needs.changes.result != 'success'
-        run: exit 1
       - name: Monitor runner activity
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
@@ -48,24 +37,47 @@ jobs:
             production.cloudfront.docker.com:443
             deb.debian.org:80
             deb.debian.org:443
+      - name: Check whether application files changed
+        if: github.event_name == 'pull_request'
+        id: paths
+        uses: dorny/paths-filter@v4.0.3
+        with:
+          predicate-quantifier: every
+          filters: |
+            app:
+              - '**'
+              - '!docs/**'
+              - '!openspec/**'
+              - '!README.md'
+              - '!AGENTS.md'
+              - '!LICENSE*'
+              - '!.github/workflows/docs.yaml'
       - uses: actions/checkout@v7.0.1
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         with:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1.338.0
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         with:
           ruby-version: '4.0.9'
           bundler-cache: true
       - run: bundle exec rake test
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
       - name: Scan application templates with Brakeman
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: bundle exec brakeman --force --no-pager --quiet
       - name: Audit Ruby dependency advisories
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: bundle exec bundle-audit check --update
       - uses: actions/setup-node@v7.1.0
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         with:
           node-version: '26.13.0'
       - name: Install pinned Renovate test engine
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: npm install --prefix /tmp/renovate --ignore-scripts --no-audit --no-fund renovate@44.222.5
       - name: Start isolated synthetic catalogue
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: |
           FIXTURE_DIR=/tmp/release-mirror-fixture bundle exec ruby test/support/preview.rb >/tmp/catalogue-fixture.log 2>&1 &
           for _attempt in {1..30}; do
@@ -74,14 +86,17 @@ jobs:
           done
           exit 1
       - name: Verify language-neutral HTTP contract
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         env:
           CONTRACT_TOKEN_FILE: /tmp/release-mirror-fixture/token
         run: ruby test/contract/acceptance.rb
       - name: Verify Renovate version and digest updates
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         env:
           RENOVATE_ENTRY: /tmp/renovate/node_modules/renovate/dist/renovate.js
         run: node test/contract/renovate.mjs
       - name: Verify portable container
+        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: |
           docker build -t release-mirror:local .
           ruby test/contract/container.rb
