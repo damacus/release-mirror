@@ -19,6 +19,13 @@ class HttpTest < Minitest::Test
   end
   def teardown = store.db.disconnect
   def body = JSON.parse(last_response.body)
+
+  def test_html_shows_the_application_version
+    get '/'
+    assert_equal 200, last_response.status
+    assert_includes last_response.body, "Release Mirror v#{ReleaseMirror::VERSION}"
+  end
+
   def api_post(path, data, token = 'admin-fixture')
     header 'Authorization', token ? "Bearer #{token}" : nil
     post path, JSON.generate(data), {'CONTENT_TYPE' => 'application/json'}

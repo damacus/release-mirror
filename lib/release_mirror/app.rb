@@ -5,6 +5,7 @@ require 'cgi/escape'
 require_relative 'store'
 require_relative 'auth'
 require_relative 'config'
+require_relative 'version'
 
 module ReleaseMirror
   # Public reads never initialise the browser login stack. Once a login starts,
