@@ -25,10 +25,22 @@ class BrowserTest < Minitest::Test
   def csrf_token = last_response.body[/name="csrf" value="([^"]+)"/, 1]
   def begin_login
     get 'https://catalogue.example.test/'
+    assert_equal 'strict-origin', last_response['referrer-policy']
     csrf = csrf_token
-    post 'https://catalogue.example.test/auth/oidc', {'csrf' => csrf}
+    post 'https://catalogue.example.test/auth/oidc', {'csrf' => csrf}, {'HTTP_ORIGIN' => 'https://catalogue.example.test'}
     assert_equal 302, last_response.status
     URI.decode_www_form(URI(last_response['location']).query).to_h
+  end
+
+  def test_login_rejects_null_or_foreign_origin_and_missing_csrf
+    get 'https://catalogue.example.test/'
+    token = csrf_token
+    ['null', 'https://other.example.test'].each do |origin|
+      post 'https://catalogue.example.test/auth/oidc', {'csrf' => token}, {'HTTP_ORIGIN' => origin}
+      assert_equal 403, last_response.status
+    end
+    post 'https://catalogue.example.test/auth/oidc', {}, {'HTTP_ORIGIN' => 'https://catalogue.example.test'}
+    assert_equal 403, last_response.status
   end
   def provider_response(params, subject: 'operator', nonce: params['nonce'], id_token: true, claims: {}, key: KEY)
     token = JWT.encode({'iss' => ISSUER, 'sub' => subject, 'aud' => 'browser', 'iat' => Time.now.to_i, 'exp' => Time.now.to_i + 600, 'nonce' => nonce}.merge(claims).compact, key, 'RS256', {'kid' => JWT::JWK.new(KEY.public_key).kid})
