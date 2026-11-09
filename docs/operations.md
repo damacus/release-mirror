@@ -1,5 +1,19 @@
 # Operating one instance
 
+## Container releases
+
+A push of a version tag beginning with `v`, such as `v1.0.0`, builds and
+publishes `ghcr.io/damacus/release-mirror` for Linux amd64 and arm64. The
+workflow publishes the version tag and `sha-<full source commit SHA>` and
+reports the multi-platform manifest digest in its job summary after checking
+both architectures. Pin deployments to `ghcr.io/damacus/release-mirror@sha256:...`
+using that published digest; tags can move. Ordinary pushes, including
+documentation-only changes, do not publish images.
+
+GitHub creates a new container package private by default. After the first
+publication, an owner must make the package public and verify anonymous pulls.
+No image digest exists until a release has actually been published.
+
 ## Deployment boundary
 
 Run one Puma process with one mounted SQLite directory. Put an HTTPS reverse proxy in front, configure `publicUrl` to the exact external origin, and expose the container only to that proxy. Mount an operator-owned JSON config read-only and inject secrets through your deployment's secret manager. The application has no installation-specific hostname or provider requirement.
