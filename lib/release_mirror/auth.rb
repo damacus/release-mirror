@@ -38,9 +38,10 @@ module ReleaseMirror
       raise Error.new('Authentication unavailable', 503)
     end
 
-    sig { params(token: T.untyped).returns(T::Hash[String, T.untyped]) }
+    sig { params(token: T.anything).returns(T::Hash[String, String]) }
     def authenticate(token)
-      deny unless token.is_a?(String) && token.bytesize.between?(1, 16384) && /\A[A-Za-z0-9._~+\/-]+=*\z/.match?(token)
+      deny unless String === token
+      deny unless token.bytesize.between?(1, 16384) && /\A[A-Za-z0-9._~+\/-]+=*\z/.match?(token)
       if token.count('.') == 2
         payload, = JWT.decode(token, nil, false)
         trusted = Array(@config['workloadIssuers']).find { |issuer| issuer['issuer'] == payload['iss'] }
@@ -51,7 +52,7 @@ module ReleaseMirror
       deny
     end
 
-    sig { params(token: String, trusted: T::Hash[String, T.untyped]).returns(T::Hash[String, T.untyped]) }
+    sig { params(token: String, trusted: T::Hash[String, T.untyped]).returns(T::Hash[String, String]) }
     def workload(token, trusted)
       payload, header = JWT.decode(token, nil, true,
         algorithms: trusted.fetch('algorithms', ['RS256']),
@@ -82,7 +83,7 @@ module ReleaseMirror
       end
     end
 
-    sig { params(token: String).returns(T::Hash[String, T.untyped]) }
+    sig { params(token: String).returns(T::Hash[String, String]) }
     def human(token)
       provider = @config['humanApi']
       deny unless provider

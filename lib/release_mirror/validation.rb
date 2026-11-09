@@ -25,24 +25,26 @@ module ReleaseMirror
     NAME = /\A(?:#{DOMAIN}\/)?#{PATH_PART}(?:\/#{PATH_PART})*\z/
     module_function
 
-    sig { params(value: T.untyped, allowed: T::Array[String], required: T::Array[String]).returns(T::Hash[T.untyped, T.untyped]) }
+    sig { params(value: T.anything, allowed: T::Array[String], required: T::Array[String]).returns(T::Hash[T.anything, T.anything]) }
     def object(value, allowed, required = [])
-      raise Error unless value.is_a?(Hash) && (value.keys - allowed).empty? && (required - value.keys).empty?
+      raise Error unless Hash === value
+      raise Error unless (value.keys - allowed).empty? && (required - value.keys).empty?
       value
     end
 
-    sig { params(value: T.untyped, grammar: Regexp, max: Integer).returns(String) }
+    sig { params(value: T.anything, grammar: Regexp, max: Integer).returns(String) }
     def string(value, grammar, max = 512)
-      raise Error unless value.is_a?(String) && value.bytesize <= max && value.valid_encoding? && grammar.match?(value)
+      raise Error unless String === value
+      raise Error unless value.bytesize <= max && value.valid_encoding? && grammar.match?(value)
       value
     end
 
-    sig { params(value: T.untyped).returns(String) }
+    sig { params(value: T.anything).returns(String) }
     def service(value) = string(value, ALIAS, 64)
-    sig { params(value: T.untyped).returns(String) }
+    sig { params(value: T.anything).returns(String) }
     def tag(value) = string(value, TAG, 128)
 
-    sig { params(value: T.untyped).returns(String) }
+    sig { params(value: T.anything).returns(String) }
     def digest(value)
       string(value, /\A(?:sha256:[a-f0-9]{64}|sha384:[a-f0-9]{96}|sha512:[a-f0-9]{128})\z/, 135)
     end
@@ -95,12 +97,13 @@ module ReleaseMirror
       {tags: tags, digest: image_digest_value, platforms: platforms(value['platforms']), immutable: immutable}
     end
 
+    sig { params(value: T.anything).returns(T::Hash[String, String]) }
     def identity(value)
-      object(value, %w[kind issuer subject], %w[kind issuer subject])
+      value = object(value, %w[kind issuer subject], %w[kind issuer subject])
       raise Error unless %w[human workload].include?(value['kind'])
       string(value['issuer'], /\Ahttps:\/\/[^\s?#]+\z/, 512)
       string(value['subject'], /\A[^\x00-\x20\x7f]{1,256}\z/, 256)
-      value
+      T.cast(value, T::Hash[String, String])
     end
   end
 end
