@@ -6,7 +6,7 @@ The catalogue does not create versions or tags, decide which builds are releases
 
 ## Run locally
 
-Requires Ruby 3.4.9 and Bundler, or Docker. With mise and Fish:
+Requires Ruby 4.0.9 and Bundler, or Docker. With mise and Fish:
 
 ```fish
 mise trust

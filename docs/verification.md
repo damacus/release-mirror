@@ -23,3 +23,15 @@ The local preview injects fixture JWKS through a test transport; the browser pro
 The dependency suite emits upstream URI deprecation warnings from the OIDC URL-validation dependency and two Rack test string warnings. They do not fail tests. The npm-based Renovate check uses its JavaScript RegExp fallback when optional native RE2 is absent; the expression uses the RE2-compatible subset, and hosted engine compatibility remains a real-installation check.
 
 Before any separately authorised production rollout, verify the actual Forgejo server/runner versions, accepted repository claims, signing algorithm/type/lifetime, Zitadel browser login and API introspection audience. Then test the hosted Renovate consumer. Observe real workload latency, database size and contention before making capacity claims. CI is configured but local checks do not prove hosted CI has run.
+
+## Runtime and workflow refresh — 9 November 2026
+
+The original Ruby 3.4.9 result above is historical. The application now requires Ruby 4.0.9 across `.ruby-version`, mise, Bundler, GitHub Actions and both Docker stages. The Ruby 4 compatibility change replaces `require 'cgi'` with the supported `cgi/escape` import. All 24 tests and 201 assertions pass on Ruby 4.0.9.
+
+The final Ruby 4.0.9 Linux container also passes the disposable non-root/read-only-root contract, mounted-volume restart persistence, complete live deletion and backup restoration checks.
+
+All workflow actions were checked against their upstream releases: checkout 7.0.1, setup-node 7.1.0 and setup-ruby 1.338.0. Their action manifests use Node 24, replacing the old checkout/setup-node Node 20 runtimes. The separately installed integration-test runtime is Node 26.13.0, the latest LTS; Renovate 44.222.5 remains current and accepts that Node version. Actionlint passes.
+
+`bundle outdated --strict` reports the locked gems current within declared compatibility constraints. `bundler-audit` 0.9.3, using ruby-advisory-db commit `7e90cbd88d767c9281acefbb8854c80e0cad6060`, reports no vulnerabilities in the lockfile. This is an advisory check, not a claim that every dependency has been independently security-reviewed.
+
+Primary release/security references: [Ruby downloads](https://www.ruby-lang.org/en/downloads/), [Ruby security advisories](https://www.ruby-lang.org/en/security/), [Node release status](https://nodejs.org/en/about/previous-releases), [checkout 7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1), [setup-node 7.1.0](https://github.com/actions/setup-node/releases/tag/v7.1.0), [setup-ruby 1.338.0](https://github.com/ruby/setup-ruby/releases/tag/v1.338.0).

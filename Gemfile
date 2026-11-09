@@ -1,5 +1,5 @@
 source 'https://rubygems.org'
-ruby '~> 3.4'
+ruby '~> 4.0.9'
 gem 'sinatra', '~> 4.2'
 gem 'puma', '~> 7.0'
 gem 'rackup', '~> 2.3'

@@ -1,7 +1,7 @@
 require 'sinatra/base'
 require 'rack/session/cookie'
 require 'securerandom'
-require 'cgi'
+require 'cgi/escape'
 require_relative 'store'
 require_relative 'auth'
 require_relative 'config'

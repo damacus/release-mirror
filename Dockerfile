@@ -1,10 +1,10 @@
-FROM ruby:3.4.9-slim AS dependencies
+FROM ruby:4.0.9-slim AS dependencies
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential libsqlite3-dev && rm -rf /var/lib/apt/lists/*
 COPY Gemfile Gemfile.lock ./
 RUN bundle config set without test && bundle install --jobs 4
 
-FROM ruby:3.4.9-slim AS runtime
+FROM ruby:4.0.9-slim AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends libsqlite3-0 ca-certificates && rm -rf /var/lib/apt/lists/* && groupadd --gid 10001 mirror && useradd --uid 10001 --gid mirror --no-create-home mirror
 WORKDIR /app
 COPY --from=dependencies /usr/local/bundle /usr/local/bundle

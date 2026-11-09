@@ -12,7 +12,7 @@ The application repository is empty. See proposal.md for motivation and the two 
 
 ## Decisions
 
-- Use Ruby 3.4, Sinatra, Sequel/sqlite3, Puma, ruby-jwt and OmniAuth OpenID Connect. Ruby keeps iteration small; SQLite avoids operating a database service for a single instance. Use locked maintained releases and Minitest/Rack::Test for behavioural tests.
+- Use Ruby 4.0.9, Sinatra, Sequel/sqlite3, Puma, ruby-jwt and OmniAuth OpenID Connect. Ruby keeps iteration small; SQLite avoids operating a database service for a single instance. Use locked maintained releases and Minitest/Rack::Test for behavioural tests. Runtime and CI action versions were refreshed on 9 November 2026 following the owner's security review.
 - Keep validation, persistence, authorisation, token verification and HTTP/UI handling in separate small modules. Use parameterised database queries and transactions for multi-tag publication and import. No raw references enter the persistence interface.
 - A release input has actual `tags`, a digest and platform descriptors; optional `reference` is parsed then discarded. An explicit immutable flag is private policy state supplied by the producer; default tags can move. No inferred immutability or synthetic tag is introduced.
 - Represent identity as issuer plus subject for humans, issuer plus immutable repository claim for workloads. Trusted workload issuers configure an audience, JWKS URL, algorithm allowlist and repository claim. Grants are server-side and can apply globally or to one existing service. Administration is independent from write capabilities.
