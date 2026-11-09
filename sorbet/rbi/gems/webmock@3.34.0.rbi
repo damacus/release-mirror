@@ -65,14 +65,6 @@ class StubSocket::StubIO
   def ssl_version; end
 end
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-# LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-# OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-# WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#
 # pkg:gem/webmock#lib/webmock/deprecation.rb:3
 module WebMock
   include ::WebMock::API
@@ -198,17 +190,6 @@ module WebMock::API
   # pkg:gem/webmock#lib/webmock/api.rb:59
   def hash_excluding(*args); end
 
-  # Similar to RSpec::Mocks::ArgumentMatchers#hash_including()
-  #
-  # Matches a hash that includes the specified key(s) or key/value pairs.
-  # Ignores any additional keys.
-  #
-  # @example
-  #
-  #   object.should_receive(:message).with(hash_including(:key => val))
-  #   object.should_receive(:message).with(hash_including(:key))
-  #   object.should_receive(:message).with(hash_including(:key, :key2 => val2))
-  #
   # pkg:gem/webmock#lib/webmock/api.rb:51
   def hash_including(*args); end
 
@@ -229,8 +210,6 @@ module WebMock::API
 
   private
 
-  # this is a based on RSpec::Mocks::ArgumentMatchers#anythingize_lonely_keys
-  #
   # pkg:gem/webmock#lib/webmock/api.rb:104
   def anythingize_lonely_keys(*args); end
 
@@ -293,30 +272,6 @@ class WebMock::BodyPattern
   # pkg:gem/webmock#lib/webmock/request_pattern.rb:377
   def matching_body_array?(query_parameters, pattern, content_type); end
 
-  # Compare two hashes for equality
-  #
-  # For two hashes to match they must have the same length and all
-  # values must match when compared using `#===`.
-  #
-  # The following hashes are examples of matches:
-  #
-  #     {a: /\d+/} and {a: '123'}
-  #
-  #     {a: '123'} and {a: '123'}
-  #
-  #     {a: {b: /\d+/}} and {a: {b: '123'}}
-  #
-  #     {a: {b: 'wow'}} and {a: {b: 'wow'}}
-  #
-  # @param [Hash] query_parameters typically the result of parsing
-  #   JSON, XML or URL encoded parameters.
-  #
-  # @param [Hash] pattern which contains keys with a string, hash or
-  #   regular expression value to use for comparison.
-  #
-  # @return [Boolean] true if the paramaters match the comparison
-  #   hash, false if not.
-  #
   # pkg:gem/webmock#lib/webmock/request_pattern.rb:367
   def matching_body_hashes?(query_parameters, pattern, content_type); end
 
@@ -327,8 +282,6 @@ class WebMock::BodyPattern
   def normalize_hash(hash); end
 end
 
-# Kept so existing references to the constant still resolve.
-#
 # pkg:gem/webmock#lib/webmock/request_pattern.rb:282
 WebMock::BodyPattern::BODY_FORMATS = T.let(T.unsafe(nil), Hash)
 
@@ -442,8 +395,6 @@ class WebMock::HashValidator
   # pkg:gem/webmock#lib/webmock/util/hash_validator.rb:5
   def initialize(hash); end
 
-  # This code is based on https://github.com/rails/rails/blob/master/activesupport/lib/active_support/core_ext/hash/keys.rb
-  #
   # pkg:gem/webmock#lib/webmock/util/hash_validator.rb:10
   def validate_keys(*valid_keys); end
 end
@@ -520,10 +471,6 @@ class WebMock::HttpLibAdapters::NetHttpAdapter < ::WebMock::HttpLibAdapter
     # pkg:gem/webmock#lib/webmock/http_lib_adapters/net_http.rb:25
     def enable!; end
 
-    # Objects created while WebMock was enabled are instances of WebMock's
-    # Net::HTTP class, so they check this to act like Net::HTTP once
-    # WebMock is disabled.
-    #
     # pkg:gem/webmock#lib/webmock/http_lib_adapters/net_http.rb:21
     def enabled?; end
 
@@ -532,36 +479,15 @@ class WebMock::HttpLibAdapters::NetHttpAdapter < ::WebMock::HttpLibAdapter
   end
 end
 
-# This will be removed in Ruby 3.5. In Ruby 3.4, const_remove will warn.
-#
 # pkg:gem/webmock#lib/webmock/http_lib_adapters/net_http.rb:16
 WebMock::HttpLibAdapters::NetHttpAdapter::HAS_LEGACY_CONSTANT = T.let(T.unsafe(nil), TrueClass)
 
 # pkg:gem/webmock#lib/webmock/http_lib_adapters/net_http.rb:14
 WebMock::HttpLibAdapters::NetHttpAdapter::OriginalNetHTTP = Net::HTTP
 
-# A body declared as a string must match the request body exactly, which for
-# JSON includes key order and whitespace. When a request fails to match only
-# because of that, failure messages suggest declaring the body as a hash.
-# See #485.
-#
 # pkg:gem/webmock#lib/webmock/json_body_hint.rb:10
 module WebMock::JsonBodyHint
   class << self
-    # True when one of the patterns declares its body as a JSON object or array
-    # string, the request has a JSON content type and a body that parses to the
-    # same JSON but is written differently, and the method, URI and headers of
-    # every pattern match the request. Any other patterns the request has to
-    # match, such as the conditions of an RSpec expectation, must not declare
-    # a body of their own.
-    #
-    # Building a failure message must not call a block given to with, which
-    # could raise and replace the failure, or repeat side effects. So there is
-    # no hint when any of the patterns has one.
-    #
-    # The body is checked first, since that runs no user code, so URI and
-    # header matchers are only evaluated when a hint is otherwise possible.
-    #
     # pkg:gem/webmock#lib/webmock/json_body_hint.rb:33
     def applies?(request_pattern, request_signature); end
 
@@ -576,9 +502,6 @@ module WebMock::JsonBodyHint
     # pkg:gem/webmock#lib/webmock/json_body_hint.rb:70
     def parse_json(string); end
 
-    # A pattern made of parts that must all match, such as an RSpec expectation
-    # with conditions, responds to #patterns. A stub stands for its pattern.
-    #
     # pkg:gem/webmock#lib/webmock/json_body_hint.rb:46
     def parts_of(request_pattern); end
   end
@@ -596,8 +519,6 @@ WebMock::JsonBodyHint::STUB_HINT = T.let(T.unsafe(nil), String)
 # pkg:gem/webmock#lib/webmock/matchers/hash_argument_matcher.rb:4
 module WebMock::Matchers; end
 
-# this is a based on RSpec::Mocks::ArgumentMatchers::AnyArgMatcher
-#
 # pkg:gem/webmock#lib/webmock/matchers/any_arg_matcher.rb:6
 class WebMock::Matchers::AnyArgMatcher
   # pkg:gem/webmock#lib/webmock/matchers/any_arg_matcher.rb:7
@@ -610,9 +531,6 @@ class WebMock::Matchers::AnyArgMatcher
   def inspect; end
 end
 
-# Base class for Hash matchers
-# https://github.com/rspec/rspec-mocks/blob/master/lib/rspec/mocks/argument_matchers.rb
-#
 # pkg:gem/webmock#lib/webmock/matchers/hash_argument_matcher.rb:7
 class WebMock::Matchers::HashArgumentMatcher
   # pkg:gem/webmock#lib/webmock/matchers/hash_argument_matcher.rb:8
@@ -627,9 +545,6 @@ class WebMock::Matchers::HashArgumentMatcher
   end
 end
 
-# this is a based on RSpec::Mocks::ArgumentMatchers::HashExcludingMatcher
-# https://github.com/rspec/rspec-mocks/blob/master/lib/rspec/mocks/argument_matchers.rb
-#
 # pkg:gem/webmock#lib/webmock/matchers/hash_excluding_matcher.rb:7
 class WebMock::Matchers::HashExcludingMatcher < ::WebMock::Matchers::HashArgumentMatcher
   # pkg:gem/webmock#lib/webmock/matchers/hash_excluding_matcher.rb:8
@@ -639,9 +554,6 @@ class WebMock::Matchers::HashExcludingMatcher < ::WebMock::Matchers::HashArgumen
   def inspect; end
 end
 
-# this is a based on RSpec::Mocks::ArgumentMatchers::HashIncludingMatcher
-# https://github.com/rspec/rspec-mocks/blob/master/lib/rspec/mocks/argument_matchers.rb
-#
 # pkg:gem/webmock#lib/webmock/matchers/hash_including_matcher.rb:7
 class WebMock::Matchers::HashIncludingMatcher < ::WebMock::Matchers::HashArgumentMatcher
   # pkg:gem/webmock#lib/webmock/matchers/hash_including_matcher.rb:8
@@ -653,10 +565,6 @@ end
 
 # pkg:gem/webmock#lib/webmock/request_pattern.rb:100
 class WebMock::MethodPattern
-  # Request signatures store the method as a lower case Symbol, so a method
-  # given as a String or in upper case, like "get" or :GET, matches too.
-  # Anything else, such as nil, is kept as given and never matches.
-  #
   # pkg:gem/webmock#lib/webmock/request_pattern.rb:104
   def initialize(pattern); end
 
@@ -718,9 +626,6 @@ class WebMock::RackResponse < ::WebMock::Response
 
   private
 
-  # Like a server, pass header values as bytes and join repeated ones. Rack
-  # splits cookies on "; ", so join those that way.
-  #
   # pkg:gem/webmock#lib/webmock/rack_response.rb:78
   def header_value(name, value); end
 end
@@ -821,9 +726,6 @@ class WebMock::RequestExecutionVerifier
   # pkg:gem/webmock#lib/webmock/request_execution_verifier.rb:56
   def failure_message_phrase(is_negated = T.unsafe(nil)); end
 
-  # Only when too few requests matched: with too many, declaring the body
-  # as a hash would match even more of them.
-  #
   # pkg:gem/webmock#lib/webmock/request_execution_verifier.rb:65
   def json_body_hint; end
 
@@ -935,9 +837,6 @@ class WebMock::RequestSignature
   # pkg:gem/webmock#lib/webmock/request_signature.rb:7
   def body=(_arg0); end
 
-  # A request can carry Content-Type more than once, in which case the
-  # normalized header value is an Array. Use its first value.
-  #
   # pkg:gem/webmock#lib/webmock/request_signature.rb:45
   def content_type; end
 
@@ -1407,8 +1306,6 @@ module WebMock::Util::Parsers; end
 # pkg:gem/webmock#lib/webmock/util/parsers/json.rb:15
 class WebMock::Util::Parsers::JSON
   class << self
-    # Ensure that ":" and "," are always followed by a space
-    #
     # pkg:gem/webmock#lib/webmock/util/parsers/json.rb:30
     def convert_json_to_yaml(json); end
 
@@ -1458,54 +1355,12 @@ class WebMock::Util::QueryMapper
     # pkg:gem/webmock#lib/webmock/util/query_mapper.rb:63
     def normalize_query_hash(query_hash, empty_accumulator, options); end
 
-    # Converts the query component to a Hash value.
-    #
-    # @option [Symbol] notation
-    #   May be one of <code>:flat</code>, <code>:dot</code>, or
-    #   <code>:subscript</code>. The <code>:dot</code> notation is not
-    #   supported for assignment. Default value is <code>:subscript</code>.
-    #
-    # @return [Hash, Array] The query string parsed as a Hash or Array object.
-    #
-    # @example
-    #   WebMock::Util::QueryMapper.query_to_values("?one=1&two=2&three=3")
-    #   #=> {"one" => "1", "two" => "2", "three" => "3"}
-    #   WebMock::Util::QueryMapper("?one[two][three]=four").query_values
-    #   #=> {"one" => {"two" => {"three" => "four"}}}
-    #   WebMock::Util::QueryMapper.query_to_values("?one.two.three=four",
-    #     :notation => :dot
-    #   )
-    #   #=> {"one" => {"two" => {"three" => "four"}}}
-    #   WebMock::Util::QueryMapper.query_to_values("?one[two][three]=four",
-    #     :notation => :flat
-    #   )
-    #   #=> {"one[two][three]" => "four"}
-    #   WebMock::Util::QueryMapper.query_to_values("?one.two.three=four",
-    #     :notation => :flat
-    #   )
-    #   #=> {"one.two.three" => "four"}
-    #   WebMock::Util::QueryMapper(
-    #     "?one[two][three][]=four&one[two][three][]=five"
-    #   )
-    #   #=> {"one" => {"two" => {"three" => ["four", "five"]}}}
-    #   WebMock::Util::QueryMapper.query_to_values(
-    #     "?one=two&one=three").query_values(:notation => :flat_array)
-    #   #=> [['one', 'two'], ['one', 'three']]
-    #
     # pkg:gem/webmock#lib/webmock/util/query_mapper.rb:42
     def query_to_values(query, options = T.unsafe(nil)); end
 
-    # new_query_values have form [['key1', 'value1'], ['key2', 'value2']]
-    #
     # pkg:gem/webmock#lib/webmock/util/query_mapper.rb:247
     def to_query(parent, value, options = T.unsafe(nil)); end
 
-    # Sets the query component for this URI from a Hash object.
-    # This method produces a query string using the :subscript notation.
-    # An empty Hash will result in a nil query.
-    #
-    # @param [Hash, #to_hash, Array] new_query_values The new query values.
-    #
     # pkg:gem/webmock#lib/webmock/util/query_mapper.rb:179
     def values_to_query(new_query_values, options = T.unsafe(nil)); end
   end

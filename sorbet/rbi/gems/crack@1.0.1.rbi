@@ -30,12 +30,6 @@ class Crack::XML
   end
 end
 
-# This is a slighly modified version of the XMLUtilityNode from
-# http://merb.devjavu.com/projects/merb/ticket/95 (has.sox@gmail.com)
-# It's mainly just adding vowels, as I ht cd wth n vwls :)
-# This represents the hard part of the work, all I did was change the
-# underlying parser.
-#
 # pkg:gem/crack#lib/crack/xml.rb:23
 class REXMLUtilityNode
   # pkg:gem/crack#lib/crack/xml.rb:56
@@ -56,8 +50,6 @@ class REXMLUtilityNode
   # pkg:gem/crack#lib/crack/xml.rb:24
   def children=(_arg0); end
 
-  # Get the inner_html of the REXML node.
-  #
   # pkg:gem/crack#lib/crack/xml.rb:172
   def inner_html; end
 
@@ -70,15 +62,9 @@ class REXMLUtilityNode
   # pkg:gem/crack#lib/crack/xml.rb:78
   def to_hash; end
 
-  # Converts the node into a readable HTML node.
-  #
-  # @return <String> The HTML node in text form.
-  #
   # pkg:gem/crack#lib/crack/xml.rb:179
   def to_html; end
 
-  # @alias #to_html #to_s
-  #
   # pkg:gem/crack#lib/crack/xml.rb:185
   def to_s; end
 
@@ -88,35 +74,9 @@ class REXMLUtilityNode
   # pkg:gem/crack#lib/crack/xml.rb:24
   def type=(_arg0); end
 
-  # Typecasts a value based upon its type. For instance, if
-  # +node+ has #type == "integer",
-  # {{[node.typecast_value("12") #=> 12]}}
-  #
-  # @param value<String> The value that is being typecast.
-  #
-  # @details [:type options]
-  #   "integer"::
-  #     converts +value+ to an integer with #to_i
-  #   "boolean"::
-  #     checks whether +value+, after removing spaces, is the literal
-  #     "true"
-  #   "datetime"::
-  #     Parses +value+ using Time.parse, and returns a UTC Time
-  #   "date"::
-  #     Parses +value+ using Date.parse
-  #
-  # @return <Integer, TrueClass, FalseClass, Time, Date, Object>
-  #   The result of typecasting +value+.
-  #
-  # @note
-  #   If +self+ does not have a "type" key, or if it's not one of the
-  #   options specified above, the raw +value+ will be returned.
-  #
   # pkg:gem/crack#lib/crack/xml.rb:157
   def typecast_value(value); end
 
-  # Take keys of the form foo-bar and convert them to foo_bar
-  #
   # pkg:gem/crack#lib/crack/xml.rb:164
   def undasherize_keys(params); end
 
@@ -140,10 +100,6 @@ class REXMLUtilityNode
   end
 end
 
-# The Reason behind redefining the String Class for this specific plugin is to
-# avoid the dynamic insertion of stuff on it (see version previous to this commit).
-# Doing that disables the possibility of efectuating a dump on the structure. This way it goes.
-#
 # pkg:gem/crack#lib/crack/xml.rb:14
 class REXMLUtiliyNodeString < ::String
   # pkg:gem/crack#lib/crack/xml.rb:15

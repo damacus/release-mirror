@@ -25,22 +25,11 @@ module OmniAuth
   end
 end
 
-# The AuthHash is a normalized schema returned by all OmniAuth
-# strategies. It maps as much user information as the provider
-# is able to provide into the InfoHash (stored as the `'info'`
-# key).
-#
 # pkg:gem/omniauth#lib/omniauth/auth_hash.rb:8
 class OmniAuth::AuthHash < ::OmniAuth::KeyStore
   # pkg:gem/omniauth#lib/omniauth/auth_hash.rb:23
   def regular_writer(key, value); end
 
-  # Tells you if this is considered to be a valid
-  # OmniAuth AuthHash. The requirements for that
-  # are that it has a provider name, a uid, and a
-  # valid info hash. See InfoHash#valid? for
-  # more details there.
-  #
   # pkg:gem/omniauth#lib/omniauth/auth_hash.rb:18
   def valid?; end
 
@@ -67,9 +56,6 @@ class OmniAuth::AuthHash::InfoHash < ::OmniAuth::KeyStore
   # pkg:gem/omniauth#lib/omniauth/auth_hash.rb:56
   def select; end
 
-  # slice, except, select, and reject return a subset of the info,
-  # which shouldn't gain a calculated name when converted with #to_hash.
-  #
   # pkg:gem/omniauth#lib/omniauth/auth_hash.rb:48
   def slice(*keys); end
 
@@ -81,8 +67,6 @@ class OmniAuth::AuthHash::InfoHash < ::OmniAuth::KeyStore
 
   private
 
-  # Only whether @subset is defined matters, not its value.
-  #
   # pkg:gem/omniauth#lib/omniauth/auth_hash.rb:73
   def subset(info); end
 
@@ -97,8 +81,6 @@ class OmniAuth::AuthenticityError < ::StandardError; end
 
 # pkg:gem/omniauth#lib/omniauth/authenticity_token_protection.rb:6
 class OmniAuth::AuthenticityTokenProtection < ::Rack::Protection::AuthenticityToken
-  # Used as a validation hook rather than as middleware, so there's no app.
-  #
   # pkg:gem/omniauth#lib/omniauth/authenticity_token_protection.rb:8
   def initialize(options = T.unsafe(nil)); end
 
@@ -136,9 +118,6 @@ class OmniAuth::Builder < ::Rack::Builder
   # pkg:gem/omniauth#lib/omniauth/builder.rb:11
   def before_request_phase(&block); end
 
-  # Rack::Builder#call rebuilds the whole middleware stack on every
-  # request. Build it on the first request and reuse it after that.
-  #
   # pkg:gem/omniauth#lib/omniauth/builder.rb:50
   def call(env); end
 
@@ -164,13 +143,6 @@ class OmniAuth::Configuration
   # pkg:gem/omniauth#lib/omniauth.rb:54
   def initialize; end
 
-  # This is a convenience method to be used by strategy authors
-  # so that they can add special cases to the camelization utility
-  # method that allows OmniAuth::Builder to work.
-  #
-  # @param name [String] The underscored name, e.g. `oauth`
-  # @param camelized [String] The properly camelized name, e.g. 'OAuth'
-  #
   # pkg:gem/omniauth#lib/omniauth.rb:132
   def add_camelization(name, camelized); end
 
@@ -299,13 +271,6 @@ end
 # pkg:gem/omniauth#lib/omniauth.rb:6
 class OmniAuth::Error < ::StandardError; end
 
-# This simple Rack endpoint that serves as the default
-# 'failure' mechanism for OmniAuth. If a strategy fails for
-# any reason this endpoint will be invoked. The default behavior
-# is to redirect to `/auth/failure` except in the case of
-# a development `RACK_ENV`, in which case an exception will
-# be raised.
-#
 # pkg:gem/omniauth#lib/omniauth/failure_endpoint.rb:8
 class OmniAuth::FailureEndpoint
   # pkg:gem/omniauth#lib/omniauth/failure_endpoint.rb:15
@@ -396,13 +361,9 @@ end
 # pkg:gem/omniauth#lib/omniauth/form.rb:3
 OmniAuth::Form::DEFAULT_CSS = T.let(T.unsafe(nil), String)
 
-# Generic helper hash that allows method access on deeply nested keys.
-#
 # pkg:gem/omniauth#lib/omniauth/key_store.rb:5
 class OmniAuth::KeyStore < ::Hashie::Mash
   class << self
-    # Disables Hashie's warnings when a key overrides a Mash method
-    #
     # pkg:gem/omniauth#lib/omniauth/key_store.rb:7
     def override_logging; end
   end
@@ -414,35 +375,6 @@ class OmniAuth::NoSessionError < ::StandardError; end
 # pkg:gem/omniauth#lib/omniauth.rb:8
 module OmniAuth::Strategies; end
 
-# The Developer strategy is a very simple strategy that can be used as a
-# placeholder in your application until a different authentication strategy
-# is swapped in. It has zero security and should *never* be used in a
-# production setting.
-#
-# ## Usage
-#
-# To use the Developer strategy, all you need to do is put it in like any
-# other strategy:
-#
-# @example Basic Usage
-#
-#   use OmniAuth::Builder do
-#     provider :developer
-#   end
-#
-# @example Custom Fields
-#
-#   use OmniAuth::Builder do
-#     provider :developer,
-#       :fields => [:first_name, :last_name],
-#       :uid_field => :last_name
-#   end
-#
-# This will create a strategy that, when the user visits `/auth/developer`
-# they will be presented a form that prompts for (by default) their name
-# and email address. The auth hash will be populated with these fields and
-# the `uid` will simply be set to the provided email.
-#
 # pkg:gem/omniauth#lib/omniauth/strategies/developer.rb:31
 class OmniAuth::Strategies::Developer
   include ::OmniAuth::Strategy::Fetchers
@@ -457,11 +389,6 @@ class OmniAuth::Strategies::Developer
   def request_phase; end
 end
 
-# The Strategy is the base unit of OmniAuth's ability to
-# wrangle multiple providers. Each strategy provided by
-# OmniAuth includes this mixin to gain the default functionality
-# necessary to be compatible with the OmniAuth library.
-#
 # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:2
 module OmniAuth::Strategy
   include ::OmniAuth::Strategy::Fetchers
@@ -472,49 +399,21 @@ module OmniAuth::Strategy
 
   mixes_in_class_methods ::OmniAuth::Strategy::ClassMethods
 
-  # Initializes the strategy by passing in the Rack endpoint,
-  # the unique URL segment name for this strategy, and any
-  # additional arguments. An `options` hash is automatically
-  # created from the last argument if it is a hash.
-  #
-  # @param app [Rack application] The application on which this middleware is applied.
-  #
-  # @overload new(app, options = {})
-  #   If nothing but a hash is supplied, initialized with the supplied options
-  #   overriding the strategy's default options via a deep merge.
-  # @overload new(app, *args, options = {})
-  #   If the strategy has supplied custom arguments that it accepts, they may
-  #   will be passed through and set to the appropriate values.
-  #
-  # @yield [Options] Yields options to block for further configuration.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:49
   def initialize(app, *args); end
 
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:32
   def app; end
 
-  # Duplicates this instance and runs #call! on it. A request that can't be
-  # the strategy's goes straight to the app instead, skipping the copy.
-  # @param [Hash] The Rack environment.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:85
   def call(env); end
 
-  # The logic for dispatching any additional actions that need
-  # to be taken. For instance, calling the request phase if
-  # the request path is recognized.
-  #
-  # @param env [Hash] The Rack environment.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:96
   def call!(env); end
 
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:265
   def call_app!(app_env = T.unsafe(nil)); end
 
-  # Performs the steps necessary to run the callback phase of a strategy.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:220
   def callback_call; end
 
@@ -530,44 +429,27 @@ module OmniAuth::Strategy
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:69
   def inspect; end
 
-  # Direct access to the OmniAuth logger, automatically prefixed
-  # with this strategy's name.
-  #
-  # @example
-  #   log :warn, "This is a warning."
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:78
   def log(level, message); end
 
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:280
   def name; end
 
-  # The params the app sent to the request phase, from both the query
-  # string and the form, which the callback phase hands back as
-  # env['omniauth.params'].
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:203
   def omniauth_params; end
 
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:32
   def options; end
 
-  # Responds to an OPTIONS request.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:160
   def options_call; end
 
-  # True for an OPTIONS request to the request or callback path.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:130
   def options_call?; end
 
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:233
   def options_request?; end
 
-  # Runs the phase that matches the current request, or returns nil
-  # if the request isn't for this strategy.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:115
   def phase_call; end
 
@@ -577,26 +459,15 @@ module OmniAuth::Strategy
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:276
   def request; end
 
-  # Performs the steps necessary to run the request phase of a strategy.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:167
   def request_call; end
 
-  # True for a request to the request path with an allowed method.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:135
   def request_call?; end
 
-  # @abstract This method is called when the user is on the request path. You should
-  # perform any information gathering you need to be able to authenticate
-  # the user in this phase.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:256
   def request_phase; end
 
-  # Renders the login form (from a Rack endpoint or the app itself) if
-  # one is configured, or else runs the strategy's request phase.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:183
   def request_response; end
 
@@ -606,17 +477,9 @@ module OmniAuth::Strategy
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:272
   def session; end
 
-  # The setup phase looks for the `:setup` option to exist and,
-  # if it is, will call either the Rack endpoint supplied to the
-  # `:setup` option or it will call out to the setup path of the
-  # underlying application. This will default to `/auth/:provider/setup`.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:241
   def setup_phase; end
 
-  # Remembers where the user came from (the origin param, or else the
-  # referer) so the callback phase can send them back there.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:209
   def store_origin; end
 
@@ -628,35 +491,18 @@ module OmniAuth::Strategy
 
   protected
 
-  # True when OmniAuth's own dispatch runs, with no test mode or
-  # other_phase, and no path lambdas, which would otherwise run twice on
-  # the strategy's own paths.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:354
   def dispatch_by_path?; end
 
-  # Re-raises errors from the downstream app; reports anything else
-  # raised during a phase as an authentication failure.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:321
   def handle_phase_error(error); end
 
-  # True when #call! would only hand env to the app: there's a session, the
-  # path alone decides, and env isn't on the strategy's paths. The
-  # strategy's own path methods check, on a copy that shares its options.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:344
   def passthrough?(env); end
 
-  # A copy like #dup makes, but sharing this instance's options, so the
-  # path methods can memoize on it instead of on this shared instance.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:361
   def path_probe(env); end
 
-  # Calls the named OmniAuth.config hook (such as :before_request_phase)
-  # with the Rack env. A hook set to nil or false is skipped.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy.rb:329
   def run_hook(name); end
 
@@ -671,47 +517,17 @@ module OmniAuth::Strategy
   end
 end
 
-# The authenticity token never goes into omniauth.params, so the app
-# can't leak it by echoing the params back.
-#
 # pkg:gem/omniauth#lib/omniauth/strategy.rb:198
 OmniAuth::Strategy::AUTHENTICITY_PARAM = T.let(T.unsafe(nil), String)
 
 # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:3
 module OmniAuth::Strategy::ClassMethods
-  # Sets (and retrieves) option key names for initializer arguments to be
-  # recorded as. This takes care of 90% of the use cases for overriding
-  # the initializer in OmniAuth Strategies.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:80
   def args(args = T.unsafe(nil)); end
 
   # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:107
   def compile_stack(ancestors, method, context); end
 
-  # This allows for more declarative subclassing of strategies by allowing
-  # default options to be set using a simple configure call.
-  #
-  # @param options [Hash] If supplied, these will be the default options (deep-merged into the superclass's default options).
-  # @yield [Options] The options Mash that allows you to set your defaults as you'd like.
-  #
-  # @example Using a yield to configure the default options.
-  #
-  #   class MyStrategy
-  #     include OmniAuth::Strategy
-  #
-  #     configure do |c|
-  #       c.foo = 'bar'
-  #     end
-  #   end
-  #
-  # @example Using a hash to configure the default options.
-  #
-  #   class MyStrategy
-  #     include OmniAuth::Strategy
-  #     configure foo: 'bar'
-  #   end
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:50
   def configure(options = T.unsafe(nil)); end
 
@@ -721,19 +537,9 @@ module OmniAuth::Strategy::ClassMethods
   # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:92
   def credentials_stack(context); end
 
-  # True when requests are dispatched by OmniAuth's own #call! and its
-  # phase checks, so #call can tell which ones would go to the app.
-  # They may live in Strategy or in a module it includes, like Paths.
-  # Methods patched directly onto Strategy count as its own.
-  #
-  # @api private
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:13
   def default_dispatch?; end
 
-  # Returns an inherited set of default options set at the class-level
-  # for each strategy.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:21
   def default_options; end
 
@@ -749,22 +555,6 @@ module OmniAuth::Strategy::ClassMethods
   # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:92
   def info_stack(context); end
 
-  # Directly declare a default option for your class. This is a useful from
-  # a documentation perspective as it provides a simple line-by-line analysis
-  # of the kinds of options your strategy provides by default.
-  #
-  # @param name [Symbol] The key of the default option in your configuration hash.
-  # @param value [Object] The value your object defaults to. Nil if not provided.
-  #
-  # @example
-  #
-  #   class MyStrategy
-  #     include OmniAuth::Strategy
-  #
-  #     option :foo, 'bar'
-  #     option
-  #   end
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:73
   def option(name, value = T.unsafe(nil)); end
 
@@ -792,9 +582,6 @@ end
 # pkg:gem/omniauth#lib/omniauth/strategy/class_methods.rb:4
 OmniAuth::Strategy::ClassMethods::DISPATCH_METHODS = T.let(T.unsafe(nil), Array)
 
-# Builds the auth hash from the uid, info, credentials, and extra
-# blocks a strategy declares with the class-level fetcher DSL.
-#
 # pkg:gem/omniauth#lib/omniauth/strategy/fetchers.rb:5
 module OmniAuth::Strategy::Fetchers
   # pkg:gem/omniauth#lib/omniauth/strategy/fetchers.rb:22
@@ -809,16 +596,6 @@ module OmniAuth::Strategy::Fetchers
   # pkg:gem/omniauth#lib/omniauth/strategy/fetchers.rb:10
   def info; end
 
-  # Determines whether or not user info should be retrieved. This
-  # allows some strategies to save a call to an external API service
-  # for existing users. You can use it either by setting the `:skip_info`
-  # to true or by setting `:skip_info` to a Proc that takes a uid and
-  # evaluates to true when you would like to skip info.
-  #
-  # @example
-  #
-  #   use MyStrategy, :skip_info => lambda{|uid| User.find_by_uid(uid)}
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/fetchers.rb:41
   def skip_info?; end
 
@@ -831,21 +608,10 @@ module OmniAuth::Strategy::Fetchers
   def merge_stack(stack); end
 end
 
-# Guards against forged hosts. Unless a full_host is set, callback URLs
-# use the request's host, which comes from the Host or X-Forwarded-Host
-# header, so a forged one would send the provider a redirect_uri on
-# another host.
-#
 # pkg:gem/omniauth#lib/omniauth/strategy/hosts.rb:7
 module OmniAuth::Strategy::Hosts
   protected
 
-  # Whether callback URLs may use this request's host. They always may
-  # when a full_host is set, since then the request's host isn't used.
-  # Otherwise, if OmniAuth.config.allowed_hosts is set, the host must
-  # match one of its entries: a string matches the whole host, ignoring
-  # case, and a regexp must match the whole host.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/hosts.rb:15
   def allowed_host?; end
 
@@ -862,10 +628,6 @@ end
 # pkg:gem/omniauth#lib/omniauth/strategy.rb:315
 class OmniAuth::Strategy::Options < ::OmniAuth::KeyStore; end
 
-# Works out the request, callback, and setup paths for a strategy and
-# whether the current request is on one of them, plus the full URLs
-# built from them.
-#
 # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:6
 module OmniAuth::Strategy::Paths
   # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:53
@@ -874,25 +636,15 @@ module OmniAuth::Strategy::Paths
   # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:86
   def callback_url; end
 
-  # Repeated slashes are collapsed, as Rails routing does, so a proxy
-  # that sends //auth/:provider still reaches the strategy.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:66
   def current_path; end
 
   # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:33
   def custom_path(kind); end
 
-  # The scheme and host for URLs such as callback_url: the strategy's
-  # :full_host option, else OmniAuth.config.full_host, else the
-  # request's. Either setting can be a string or a proc taking the env.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:77
   def full_host; end
 
-  # Returns true if the environment recognizes either the
-  # request or callback path.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:9
   def on_auth_path?; end
 
@@ -922,21 +674,12 @@ module OmniAuth::Strategy::Paths
 
   protected
 
-  # The :callback_path option: a string, or a lambda that returns true
-  # when the current path is the callback path.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:101
   def callback_path_option; end
 
-  # The scheme, host, and port of the current request, or an empty
-  # string if the request URL isn't absolute.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:110
   def full_host_from_request; end
 
-  # Reads request.env rather than env, so full_host and callback_url also
-  # work outside a Rack call, as when a strategy's tests stub #request.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:132
   def ssl?; end
 end
@@ -950,66 +693,31 @@ OmniAuth::Strategy::Paths::EMPTY_STRING = T.let(T.unsafe(nil), String)
 # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:62
 OmniAuth::Strategy::Paths::FORMAT_EXTENSION_REGEX = T.let(T.unsafe(nil), Regexp)
 
-# Rack env values that mean the request came in over HTTPS.
-#
 # pkg:gem/omniauth#lib/omniauth/strategy/paths.rb:123
 OmniAuth::Strategy::Paths::SSL_ENV_VALUES = T.let(T.unsafe(nil), Hash)
 
-# Keeps the origin and params of several sign-ins in progress at once,
-# for example in several tabs, so each callback gets its own. Without
-# this, the session holds a single omniauth.origin and omniauth.params,
-# and starting a sign-in replaces the last one's.
-#
-# A strategy opts in when its provider sends a value from the request
-# phase back to the callback, such as OAuth 2.0's state. Its request
-# phase calls remember_sign_in with that value, and it overrides
-# callback_sign_in_key to return the value from the callback.
-#
 # pkg:gem/omniauth#lib/omniauth/strategy/sign_ins.rb:12
 module OmniAuth::Strategy::SignIns
-  # The key the callback sends back, which a strategy that calls
-  # remember_sign_in returns. Nil for a strategy that doesn't.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/sign_ins.rb:30
   def callback_sign_in_key; end
 
-  # Remembers the origin and params stored for the current request phase
-  # under key, which the provider sends back to the callback.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/sign_ins.rb:19
   def remember_sign_in(key); end
 
   protected
 
-  # The origin and params for this callback, removed from the session:
-  # the ones remembered under its key, or else omniauth.origin and
-  # omniauth.params, which hold the latest sign-in's.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/sign_ins.rb:37
   def recall_sign_in; end
 
-  # A copy of the remembered sign-ins, which are changed by assigning the
-  # session key, not in place.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/sign_ins.rb:51
   def remembered_sign_ins; end
 end
 
-# How many sign-ins are remembered. Remembering another forgets the
-# oldest.
-#
 # pkg:gem/omniauth#lib/omniauth/strategy/sign_ins.rb:15
 OmniAuth::Strategy::SignIns::MAX_REMEMBERED_SIGN_INS = T.let(T.unsafe(nil), Integer)
 
-# Runs the request and callback phases against OmniAuth.config.mock_auth
-# instead of the provider when OmniAuth.config.test_mode is enabled.
-#
 # pkg:gem/omniauth#lib/omniauth/strategy/test_mode.rb:5
 module OmniAuth::Strategy::TestMode
-  # This is called in lieu of the normal request process
-  # in the event that OmniAuth has been configured to be
-  # in test mode.
-  #
   # pkg:gem/omniauth#lib/omniauth/strategy/test_mode.rb:9
   def mock_call!(*); end
 
@@ -1020,8 +728,6 @@ module OmniAuth::Strategy::TestMode
   def mock_request_call; end
 end
 
-# Support for testing OmniAuth strategies.
-#
 # pkg:gem/omniauth#lib/omniauth/test.rb:3
 module OmniAuth::Test; end
 
@@ -1049,20 +755,6 @@ module OmniAuth::Test::StrategyMacros
   def sets_user_info_to(user_info); end
 end
 
-# Support for testing OmniAuth strategies.
-#
-# @example Usage
-#   class MyStrategyTest < Test::Unit::TestCase
-#     include OmniAuth::Test::StrategyTestCase
-#     def strategy
-#       # return the parameters to a Rack::Builder map call:
-#       [MyStrategy, :some, :configuration, :options => 'here']
-#     end
-#     setup do
-#       post '/auth/my_strategy/callback', :user => { 'name' => 'Dylan', 'id' => '445' }
-#     end
-#   end
-#
 # pkg:gem/omniauth#lib/omniauth/test/strategy_test_case.rb:19
 module OmniAuth::Test::StrategyTestCase
   # pkg:gem/omniauth#lib/omniauth/test/strategy_test_case.rb:20

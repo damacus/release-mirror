@@ -5,12 +5,6 @@
 # Please instead update this file by running `bin/tapioca gem rack-session`.
 
 
-# Released under the MIT License.
-# Copyright, 2022-2023, by Samuel Williams.
-# Copyright, 2022, by Jeremy Evans.
-# Released under the MIT License.
-# Copyright, 2022-2023, by Samuel Williams.
-#
 # pkg:gem/rack-session#lib/rack/session.rb:7
 module Rack; end
 
@@ -22,24 +16,12 @@ module Rack::Session::Abstract; end
 
 # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:499
 class Rack::Session::Abstract::ID < ::Rack::Session::Abstract::Persisted
-  # All thread safety and session destroy procedures should occur here.
-  # Should return a new session id or nil if options[:drop]
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:529
   def delete_session(req, sid, options); end
 
-  # All thread safety and session retrieval procedures should occur here.
-  # Should return [session_id, session].
-  # If nil is provided as the session id, generation of a new valid id
-  # should occur within.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:514
   def find_session(req, sid); end
 
-  # All thread safety and session storage procedures should occur here.
-  # Must return the session id if the session was saved successfully, or
-  # false if the session could not be saved.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:522
   def write_session(req, sid, session, options); end
 
@@ -49,35 +31,6 @@ class Rack::Session::Abstract::ID < ::Rack::Session::Abstract::Persisted
   end
 end
 
-# ID sets up a basic framework for implementing an id based sessioning
-# service. Cookies sent to the client for maintaining sessions will only
-# contain an id reference. Only #find_session, #write_session and
-# #delete_session are required to be overwritten.
-#
-# All parameters are optional.
-# * :key determines the name of the cookie, by default it is
-#   'rack.session'
-# * :path, :domain, :expire_after, :secure, :httponly, :partitioned and :same_site set
-#   the related cookie options as by Rack::Response#set_cookie
-# * :skip will not a set a cookie in the response nor update the session state
-# * :defer will not set a cookie in the response but still update the session
-#   state if it is used with a backend
-# * :renew (implementation dependent) will prompt the generation of a new
-#   session id, and migration of data to be referenced at the new id. If
-#   :defer is set, it will be overridden and the cookie will be set.
-# * :sidbits sets the number of bits in length that a generated session
-#   id will be.
-#
-# These options can be set on a per request basis, at the location of
-# <tt>env['rack.session.options']</tt>. Additionally the id of the
-# session can be found within the options hash at the key :id. It is
-# highly not recommended to change its value.
-#
-# Is Rack::Utils::Context compatible.
-#
-# Not included by default; you must require 'rack/session/abstract/id'
-# to use.
-#
 # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:239
 class Rack::Session::Abstract::Persisted
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:257
@@ -86,11 +39,6 @@ class Rack::Session::Abstract::Persisted
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:267
   def call(env); end
 
-  # Acquires the session from the environment and the session id from
-  # the session options and passes them to #write_session. If successful
-  # and the :defer option is not true, a cookie will be added to the
-  # response with the session's id.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:381
   def commit_session(req, res); end
 
@@ -111,36 +59,21 @@ class Rack::Session::Abstract::Persisted
 
   private
 
-  # Session should be committed if it was loaded, any of specific options like :renew, :drop
-  # or :expire_after was given and the security permissions match. Skips if skip is given.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:350
   def commit_session?(req, session, options); end
 
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:416
   def cookie_value(data); end
 
-  # Returns the current session id from the SessionHash.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:336
   def current_session_id(req); end
 
-  # All thread safety and session destroy procedures should occur here.
-  # Should return a new session id or nil if options[:drop]
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:455
   def delete_session(req, sid, options); end
 
-  # Extract session id from request object.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:328
   def extract_session_id(request); end
 
-  # All thread safety and session retrieval procedures should occur here.
-  # Should return [session_id, session].
-  # If nil is provided as the session id, generation of a new valid id
-  # should occur within.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:440
   def find_session(env, sid); end
 
@@ -150,19 +83,12 @@ class Rack::Session::Abstract::Persisted
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:363
   def forced_session_update?(session, options); end
 
-  # Generate a new session id using Ruby #rand.  The size of the
-  # session id is controlled by the :sidbits option.
-  # Monkey patch this to use custom methods for session id generation.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:296
   def generate_sid(secure = T.unsafe(nil)); end
 
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:286
   def initialize_sid; end
 
-  # Extracts the session id from provided cookies and passes it and the
-  # environment to #find_session.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:320
   def load_session(req); end
 
@@ -172,35 +98,21 @@ class Rack::Session::Abstract::Persisted
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:282
   def make_request(env); end
 
-  # Sets the lazy session at 'rack.session' and places options and session
-  # metadata into 'rack.session.options'.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:309
   def prepare_session(req); end
 
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:371
   def security_matches?(request, options); end
 
-  # Allow subclasses to prepare_session for different Session classes
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:431
   def session_class; end
 
-  # Check if the session exists or not.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:342
   def session_exists?(req); end
 
-  # Sets the cookie back to the client with session id. We skip the cookie
-  # setting if the value didn't change (sid is the same) or expires was given.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:423
   def set_cookie(request, response, cookie); end
 
-  # All thread safety and session storage procedures should occur here.
-  # Must return the session id if the session was saved successfully, or
-  # false if the session could not be saved.
-  #
   # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:448
   def write_session(req, sid, session, options); end
 end
@@ -231,8 +143,6 @@ class Rack::Session::Abstract::PersistedSecure::SecureSessionHash < ::Rack::Sess
   def [](key); end
 end
 
-# SessionHash is responsible to lazily load the session from store.
-#
 # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:50
 class Rack::Session::Abstract::SessionHash
   include ::Enumerable
@@ -344,69 +254,6 @@ end
 # pkg:gem/rack-session#lib/rack/session/abstract/id.rb:54
 Rack::Session::Abstract::SessionHash::Unspecified = T.let(T.unsafe(nil), Object)
 
-# Rack::Session::Cookie provides simple cookie based session management.
-# By default, the session is a Ruby Hash that is serialized and encoded as
-# a cookie set to :key (default: rack.session).
-#
-# This middleware accepts a :secrets option which enables encryption of
-# session cookies. This option should be one or more random "secret keys"
-# that are each at least 64 bytes in length. Multiple secret keys can be
-# supplied in an Array, which is useful when rotating secrets.
-#
-# Several options are also accepted that are passed to Rack::Session::Encryptor.
-# These options include:
-# * :serialize_json
-#     Use JSON for message serialization instead of Marshal. This can be
-#     viewed as a security enhancement.
-# * :gzip_over
-#     For message data over this many bytes, compress it with the deflate
-#     algorithm.
-#
-# Refer to Rack::Session::Encryptor for more details on these options.
-#
-# Prior to version TODO, the session hash was stored as base64 encoded
-# marshalled data. When a :secret option was supplied, the integrity of the
-# encoded data was protected with HMAC-SHA1. This functionality is still
-# supported using a set of a legacy options.
-#
-# Lastly, a :coder option is also accepted. When used, both encryption and
-# the legacy HMAC will be skipped. This option could create security issues
-# in your application!
-#
-# Example:
-#
-#   use Rack::Session::Cookie, {
-#     key: 'rack.session',
-#     domain: 'foo.com',
-#     path: '/',
-#     expire_after: 2592000,
-#     secrets: 'a randomly generated, raw binary string 64 bytes in size',
-#   }
-#
-# Example using legacy HMAC options:
-#
-#   Rack::Session:Cookie.new(application, {
-#     # The secret used for legacy HMAC cookies, this enables the functionality
-#     legacy_hmac_secret: 'legacy secret',
-#     # legacy_hmac_coder will default to Rack::Session::Cookie::Base64::Marshal
-#     legacy_hmac_coder: Rack::Session::Cookie::Identity.new,
-#     # legacy_hmac will default to OpenSSL::Digest::SHA1
-#     legacy_hmac: OpenSSL::Digest::SHA256
-#   })
-#
-#
-#   Rack::Session::Cookie.new(application, {
-#     :coder => Rack::Session::Cookie::Identity.new
-#   })
-#
-#
-#   Rack::Session::Cookie.new(application, {
-#     :coder => Class.new {
-#       def encode(str); str.reverse; end
-#       def decode(str); str.reverse; end
-#     }.new
-#   })
-#
 # pkg:gem/rack-session#lib/rack/session/cookie.rb:91
 class Rack::Session::Cookie < ::Rack::Session::Abstract::PersistedSecure
   # pkg:gem/rack-session#lib/rack/session/cookie.rb:159
@@ -441,13 +288,6 @@ class Rack::Session::Cookie < ::Rack::Session::Abstract::PersistedSecure
   # pkg:gem/rack-session#lib/rack/session/cookie.rb:252
   def persistent_session_id!(data, sid = T.unsafe(nil)); end
 
-  # Were consider "secure" if:
-  # * Encrypted cookies are enabled and one or more encryptor is
-  #   initialized
-  # * The legacy HMAC option is enabled
-  # * Customer :coder is used, with :let_coder_handle_secure_encoding
-  #   set to true
-  #
   # pkg:gem/rack-session#lib/rack/session/cookie.rb:308
   def secure?(options); end
 
@@ -458,8 +298,6 @@ class Rack::Session::Cookie < ::Rack::Session::Abstract::PersistedSecure
   def write_session(req, session_id, session, options); end
 end
 
-# Encode session cookies as Base64
-#
 # pkg:gem/rack-session#lib/rack/session/cookie.rb:93
 class Rack::Session::Cookie::Base64
   # pkg:gem/rack-session#lib/rack/session/cookie.rb:98
@@ -469,9 +307,6 @@ class Rack::Session::Cookie::Base64
   def encode(str); end
 end
 
-# N.B. Unlike other encoding methods, the contained objects must be a
-# valid JSON composite type, either a Hash or an Array.
-#
 # pkg:gem/rack-session#lib/rack/session/cookie.rb:116
 class Rack::Session::Cookie::Base64::JSON < ::Rack::Session::Cookie::Base64
   # pkg:gem/rack-session#lib/rack/session/cookie.rb:121
@@ -481,8 +316,6 @@ class Rack::Session::Cookie::Base64::JSON < ::Rack::Session::Cookie::Base64
   def encode(obj); end
 end
 
-# Encode session cookies as Marshaled Base64 data
-#
 # pkg:gem/rack-session#lib/rack/session/cookie.rb:103
 class Rack::Session::Cookie::Base64::Marshal < ::Rack::Session::Cookie::Base64
   # pkg:gem/rack-session#lib/rack/session/cookie.rb:108
@@ -501,8 +334,6 @@ class Rack::Session::Cookie::Base64::ZipJSON < ::Rack::Session::Cookie::Base64
   def encode(obj); end
 end
 
-# Use no encoding for session cookies
-#
 # pkg:gem/rack-session#lib/rack/session/cookie.rb:142
 class Rack::Session::Cookie::Identity
   # pkg:gem/rack-session#lib/rack/session/cookie.rb:144
@@ -566,16 +397,9 @@ class Rack::Session::Encryptor::InvalidSignature < ::Rack::Session::Encryptor::E
 module Rack::Session::Encryptor::Serializable
   private
 
-  # Return the deserialized message. The first 2 bytes will be read as the
-  # amount of padding.
-  #
   # pkg:gem/rack-session#lib/rack/session/encryptor.rb:45
   def deserialized_message(data); end
 
-  # Returns a serialized payload of the message. If a :pad_size is supplied,
-  # the message will be padded. The first 2 bytes of the returned string will
-  # indicating the amount of padding.
-  #
   # pkg:gem/rack-session#lib/rack/session/encryptor.rb:32
   def serialize_payload(message); end
 
@@ -587,34 +411,6 @@ end
 class Rack::Session::Encryptor::V1
   include ::Rack::Session::Encryptor::Serializable
 
-  # The secret String must be at least 64 bytes in size. The first 32 bytes
-  # will be used for the encryption cipher key. The remainder will be used
-  # for an HMAC key.
-  #
-  # Options may include:
-  # * :serialize_json
-  #     Use JSON for message serialization instead of Marshal. This can be
-  #     viewed as a security enhancement.
-  # * :pad_size
-  #     Pad encrypted message data, to a multiple of this many bytes
-  #     (default: 32). This can be between 2-4096 bytes, or +nil+ to disable
-  #     padding.
-  # * :purpose
-  #     Limit messages to a specific purpose. This can be viewed as a
-  #     security enhancement to prevent message reuse from different contexts
-  #     if keys are reused.
-  #
-  # Cryptography and Output Format:
-  #
-  #   urlsafe_encode64(version + random_data + IV + encrypted data + HMAC)
-  #
-  #  Where:
-  #  * version - 1 byte with value 0x01
-  #  * random_data - 32 bytes used for generating the per-message secret
-  #  * IV - 16 bytes random initialization vector
-  #  * HMAC - 32 bytes HMAC-SHA-256 of all preceding data, plus the purpose
-  #    value
-  #
   # pkg:gem/rack-session#lib/rack/session/encryptor.rb:89
   def initialize(secret, opts = T.unsafe(nil)); end
 
@@ -649,38 +445,6 @@ end
 class Rack::Session::Encryptor::V2
   include ::Rack::Session::Encryptor::Serializable
 
-  # The secret String must be at least 32 bytes in size.
-  #
-  # Options may include:
-  # * :pad_size
-  #     Pad encrypted message data, to a multiple of this many bytes
-  #     (default: 32). This can be between 2-4096 bytes, or +nil+ to disable
-  #     padding.
-  # * :purpose
-  #     Limit messages to a specific purpose. This can be viewed as a
-  #     security enhancement to prevent message reuse from different contexts
-  #     if keys are reused.
-  #
-  # Cryptography and Output Format:
-  #
-  #   strict_encode64(version + salt + IV + authentication tag + ciphertext)
-  #
-  #  Where:
-  #  * version - 1 byte with value 0x02
-  #  * salt - 32 bytes used for generating the per-message secret
-  #  * IV - 12 bytes random initialization vector
-  #  * authentication tag - 16 bytes authentication tag generated by the GCM mode, covering version and salt
-  #
-  # Considerations about V2:
-  #
-  # 1) It uses non URL-safe Base64 encoding as it's faster than its
-  #    URL-safe counterpart - as of Ruby 3.2, Base64.urlsafe_encode64 is
-  #    roughly equivalent to
-  #
-  #    Base64.strict_encode64(data).tr("-_", "+/")
-  #
-  #    - and cookie values don't need to be URL-safe.
-  #
   # pkg:gem/rack-session#lib/rack/session/encryptor.rb:233
   def initialize(secret, opts = T.unsafe(nil)); end
 
@@ -692,9 +456,6 @@ class Rack::Session::Encryptor::V2
 
   private
 
-  # JRuby's OpenSSL implementation doesn't currently support passing
-  # an argument to #auth_tag. Here we work around that.
-  #
   # pkg:gem/rack-session#lib/rack/session/encryptor.rb:341
   def auth_tag_from(cipher); end
 
@@ -711,22 +472,6 @@ class Rack::Session::Encryptor::V2
   def set_cipher_key(cipher, key); end
 end
 
-# Rack::Session::Pool provides simple cookie based session management.
-# Session data is stored in a hash held by @pool.
-# In the context of a multithreaded environment, sessions being
-# committed to the pool is done in a merging manner.
-#
-# The :drop option is available in rack.session.options if you wish to
-# explicitly remove the session from the session cache.
-#
-# Example:
-#   myapp = MyRackApp.new
-#   sessioned = Rack::Session::Pool.new(myapp,
-#     :domain => 'foo.com',
-#     :expire_after => 2592000
-#   )
-#   Rack::Handler::WEBrick.run sessioned
-#
 # pkg:gem/rack-session#lib/rack/session/pool.rb:26
 class Rack::Session::Pool < ::Rack::Session::Abstract::PersistedSecure
   # pkg:gem/rack-session#lib/rack/session/pool.rb:30

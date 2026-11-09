@@ -17,8 +17,9 @@ module ReleaseMirror
       raise Error.new('Configure CONFIG_FILE before starting', 500)
     end
 
-    sig { params(value: T.untyped).void }
+    sig { params(value: T.anything).void }
     def https(value)
+      raise Error unless String === value || URI::Generic === value
       uri = URI(value)
       raise Error unless uri.is_a?(URI::HTTPS) && uri.host && !uri.userinfo && !uri.query && !uri.fragment
     rescue URI::InvalidURIError, TypeError

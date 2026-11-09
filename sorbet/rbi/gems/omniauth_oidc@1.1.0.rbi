@@ -11,8 +11,6 @@ module OmniAuth; end
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/request.rb:4
 module OmniAuth::Strategies; end
 
-# OIDC strategy for OmniAuth
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/request.rb:5
 class OmniAuth::Strategies::Oidc
   include ::OmniAuth::Strategy::Fetchers
@@ -30,25 +28,15 @@ class OmniAuth::Strategies::Oidc
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:94
   def initialize(app, *args, &block); end
 
-  # Initialize our custom OIDC Client with options
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:134
   def client; end
 
-  # Config is built from the json response from the OIDC config endpoint.
-  # OmniAuth dups the strategy per request, so the process-wide cache is what avoids
-  # refetching the discovery document on every request.
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:159
   def config; end
 
-  # URL to end authenticated user's session with OIDC provider
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:179
   def end_session_uri; end
 
-  # Detects if current request is for the logout url and makes a redirect to end session with OIDC provider
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:169
   def other_phase; end
 
@@ -58,8 +46,6 @@ class OmniAuth::Strategies::Oidc
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:148
   def set_client_endpoints; end
 
-  # Always the subject claim: the only identifier OIDC guarantees to be stable and unique per issuer
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:100
   def uid; end
 
@@ -92,8 +78,6 @@ class OmniAuth::Strategies::Oidc
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:259
   def redirect_uri; end
 
-  # By default Returns all scopes supported by the OIDC provider
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:217
   def scope; end
 
@@ -103,8 +87,6 @@ class OmniAuth::Strategies::Oidc
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:253
   def session; end
 
-  # Session key helpers with provider namespacing
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:231
   def session_key(suffix); end
 
@@ -121,8 +103,6 @@ class OmniAuth::Strategies::Oidc
   def warn_uid_field_deprecation; end
 end
 
-# Callback phase - handles OIDC provider response
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/callback.rb:7
 module OmniAuth::Strategies::Oidc::Callback
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/callback.rb:8
@@ -130,8 +110,6 @@ module OmniAuth::Strategies::Oidc::Callback
 
   private
 
-  # Accessor for OmniAuth DSL blocks
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/callback.rb:178
   def access_token; end
 
@@ -162,30 +140,22 @@ module OmniAuth::Strategies::Oidc::Callback
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/callback.rb:66
   def missing_response_type_failure; end
 
-  # Parse response from OIDC endpoint and set client options for callback phase
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/callback.rb:164
   def set_client_options_for_callback_phase; end
 
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/callback.rb:114
   def stored_pkce_verifier; end
 
-  # Accessor for OmniAuth DSL blocks
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/callback.rb:173
   def user_info; end
 
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/callback.rb:54
   def validate_callback_params!; end
 
-  # A login without a subject must never complete: a nil uid can match the wrong local account
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/callback.rb:149
   def verify_subject!; end
 end
 
-# Override for the CallbackError class
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:281
 class OmniAuth::Strategies::Oidc::CallbackError < ::StandardError
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:284
@@ -219,8 +189,6 @@ OmniAuth::Strategies::Oidc::REQUIRED_OPTIONS = T.let(T.unsafe(nil), Array)
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc.rb:29
 OmniAuth::Strategies::Oidc::RESPONSE_TYPE_EXCEPTIONS = T.let(T.unsafe(nil), Hash)
 
-# Code request phase
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/request.rb:7
 module OmniAuth::Strategies::Oidc::Request
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/request.rb:18
@@ -237,29 +205,18 @@ module OmniAuth::Strategies::Oidc::Request
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/request.rb:43
   def request_options; end
 
-  # Parse response from OIDC endpoint and set client options for request phase
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/request.rb:71
   def set_client_options_for_request_phase; end
 end
 
-# Token verification phase
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:7
 module OmniAuth::Strategies::Oidc::Verify
-  # https://tools.ietf.org/html/rfc7636#appendix-A
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:22
   def pkce_authorize_params(verifier); end
 
-  # Looks for key defined in omniauth initializer, if none is defined
-  # falls back to using jwks_uri returned by OIDC config_endpoint
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:31
   def public_key; end
 
-  # Refetch the JWKS, at most once per JWKS_REFRESH_MIN_INTERVAL for each jwks_uri
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:40
   def public_key_with_refresh; end
 
@@ -268,9 +225,6 @@ module OmniAuth::Strategies::Oidc::Verify
 
   private
 
-  # client_signing_alg when set, otherwise the algorithms the discovery document
-  # advertises for ID tokens, otherwise RS256.
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:222
   def allowed_signing_algorithms; end
 
@@ -292,17 +246,12 @@ module OmniAuth::Strategies::Oidc::Verify
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:49
   def fetch_key(force_refresh: T.unsafe(nil)); end
 
-  # An empty key lets anyone forge HS* tokens (CVE-2026-45363), so never verify with one
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:70
   def hmac_secret; end
 
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:181
   def keyset_for_algorithm(algorithm, kid = T.unsafe(nil)); end
 
-  # OIDC Core 3.2.2.1 requires a nonce for the implicit (id_token) flow, so it is
-  # always used there, regardless of send_nonce.
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:135
   def nonce_required?; end
 
@@ -312,9 +261,6 @@ module OmniAuth::Strategies::Oidc::Verify
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:241
   def parse_x509_key(key); end
 
-  # The token header is attacker controlled, so the accepted algorithms come from
-  # configuration only. "none" is never accepted.
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:211
   def validate_algorithm!(algorithm); end
 
@@ -324,25 +270,15 @@ module OmniAuth::Strategies::Oidc::Verify
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:87
   def verify_claims!(decoded_token); end
 
-  # exp is required by OIDC Core 3.1.3.7 and must be a NumericDate (RFC 7519 2).
-  # Clock skew between us and the provider is tolerated up to clock_skew_leeway.
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:141
   def verify_expiration!(claims); end
 
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:77
   def verify_id_token!(id_token); end
 
-  # The discovery document is validated to always carry an issuer, so this check
-  # cannot be skipped by a provider that omits it.
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:103
   def verify_issuer!(claims); end
 
-  # The expected nonce comes only from the session. Never read it from request params:
-  # the caller controls those. Nonce values are left out of messages because they end
-  # up in logs.
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:122
   def verify_nonce!(claims, expected_nonce); end
 
@@ -350,25 +286,18 @@ module OmniAuth::Strategies::Oidc::Verify
   def verify_signature!(id_token, key, algorithm); end
 end
 
-# Algorithm assumed when neither client_signing_alg nor the discovery document names one
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:11
 OmniAuth::Strategies::Oidc::Verify::DEFAULT_SIGNING_ALGORITHM = T.let(T.unsafe(nil), String)
 
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:8
 OmniAuth::Strategies::Oidc::Verify::HMAC_ALGORITHMS = T.let(T.unsafe(nil), Array)
 
-# Minimum seconds between JWKS refreshes triggered by an unknown kid, so tokens with
-# made-up kids cannot be used to hammer the provider's JWKS endpoint.
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/strategies/oidc/verify.rb:15
 OmniAuth::Strategies::Oidc::Verify::JWKS_REFRESH_MIN_INTERVAL = T.let(T.unsafe(nil), Integer)
 
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/version.rb:3
 module OmniauthOidc; end
 
-# Custom OIDC client using Net::HTTP
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/client.rb:7
 class OmniauthOidc::Client
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/client.rb:11
@@ -426,8 +355,6 @@ class OmniauthOidc::Client
   def userinfo_endpoint=(_arg0); end
 end
 
-# Fetches and parses OpenID Connect configuration from .well-known endpoint
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:5
 class OmniauthOidc::ConfigFetcher
   class << self
@@ -437,16 +364,11 @@ class OmniauthOidc::ConfigFetcher
     # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:65
     def fetch(endpoint_url, max_retries: T.unsafe(nil)); end
 
-    # Fetches the discovery document, reusing it across requests for ttl seconds.
-    # Failed fetches are not cached. A ttl of 0 disables caching.
-    #
     # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:84
     def fetch_cached(endpoint_url, ttl: T.unsafe(nil)); end
 
     private
 
-    # Recursively converts keys of a hash to symbols while retaining the original string keys
-    #
     # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:103
     def deep_symbolize_keys(hash); end
 
@@ -458,8 +380,6 @@ end
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:17
 OmniauthOidc::ConfigFetcher::CACHE = T.let(T.unsafe(nil), OmniauthOidc::TtlCache)
 
-# Config object with dynamic attribute access for OIDC discovery fields
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:21
 class OmniauthOidc::ConfigFetcher::Config
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:22
@@ -507,26 +427,18 @@ end
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:6
 OmniauthOidc::ConfigFetcher::DEFAULT_CACHE_TTL = T.let(T.unsafe(nil), Integer)
 
-# Fields without which the gem cannot verify tokens or start a login
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:15
 OmniauthOidc::ConfigFetcher::REQUIRED_FIELDS = T.let(T.unsafe(nil), Array)
 
-# Discovery fields the gem reads. Missing ones return nil instead of raising NoMethodError.
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/config_fetcher.rb:9
 OmniauthOidc::ConfigFetcher::STANDARD_FIELDS = T.let(T.unsafe(nil), Array)
 
-# Configuration errors
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/errors.rb:11
 class OmniauthOidc::ConfigurationError < ::OmniauthOidc::Error; end
 
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/errors.rb:4
 class OmniauthOidc::Error < ::RuntimeError; end
 
-# Simple HTTP client using Net::HTTP
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/http_client.rb:9
 class OmniauthOidc::HttpClient
   class << self
@@ -550,9 +462,6 @@ class OmniauthOidc::HttpClient
     # pkg:gem/omniauth_oidc#lib/omniauth/oidc/http_client.rb:96
     def parse_json_response(body); end
 
-    # Refuses HTTPS to HTTP downgrades, and drops credentials when a redirect leaves the
-    # original origin, so a bearer token is never sent in cleartext or to another host.
-    #
     # pkg:gem/omniauth_oidc#lib/omniauth/oidc/http_client.rb:84
     def redirect_headers(from, to, headers); end
   end
@@ -564,9 +473,6 @@ class OmniauthOidc::HttpClient::HttpError < ::StandardError; end
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/http_client.rb:12
 OmniauthOidc::HttpClient::MAX_REDIRECTS = T.let(T.unsafe(nil), Integer)
 
-# Explicit timeouts in seconds. Net::HTTP defaults to 60s each, which would let a
-# hanging provider tie up the calling thread for minutes.
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/http_client.rb:16
 OmniauthOidc::HttpClient::OPEN_TIMEOUT = T.let(T.unsafe(nil), Integer)
 
@@ -591,13 +497,9 @@ class OmniauthOidc::InvalidNonceError < ::OmniauthOidc::TokenError; end
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/errors.rb:19
 class OmniauthOidc::InvalidSignatureError < ::OmniauthOidc::TokenError; end
 
-# Handles JWK/JWKS operations for JWT verification
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwk_handler.rb:8
 class OmniauthOidc::JwkHandler
   class << self
-    # Find the right key from JWKS based on kid (key ID)
-    #
     # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwk_handler.rb:36
     def find_key(keys, kid = T.unsafe(nil)); end
 
@@ -609,8 +511,6 @@ class OmniauthOidc::JwkHandler
   end
 end
 
-# Parsed key with its kid for matching
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwk_handler.rb:10
 class OmniauthOidc::JwkHandler::KeyWithId < ::Struct
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwk_handler.rb:10
@@ -643,24 +543,18 @@ class OmniauthOidc::JwkHandler::KeyWithId < ::Struct
   end
 end
 
-# Process-wide JWKS cache with configurable TTL and force refresh capability
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwks_cache.rb:5
 class OmniauthOidc::JwksCache < ::OmniauthOidc::TtlCache
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwks_cache.rb:26
   def initialize(ttl: T.unsafe(nil)); end
 
   class << self
-    # Clear all cached keys (useful for testing)
-    #
     # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwks_cache.rb:16
     def clear!; end
 
     # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwks_cache.rb:11
     def instance; end
 
-    # Force refresh a specific JWKS URI on next access
-    #
     # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwks_cache.rb:21
     def invalidate(jwks_uri); end
   end
@@ -669,13 +563,9 @@ end
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwks_cache.rb:6
 OmniauthOidc::JwksCache::DEFAULT_TTL = T.let(T.unsafe(nil), Integer)
 
-# 1 hour in seconds
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/jwks_cache.rb:7
 OmniauthOidc::JwksCache::INSTANCE_MUTEX = T.let(T.unsafe(nil), Thread::Mutex)
 
-# JWKS errors
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/errors.rb:25
 class OmniauthOidc::JwksError < ::OmniauthOidc::Error; end
 
@@ -685,8 +575,6 @@ class OmniauthOidc::JwksFetchError < ::OmniauthOidc::JwksError; end
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/errors.rb:27
 class OmniauthOidc::KeyNotFoundError < ::OmniauthOidc::JwksError; end
 
-# Logging module providing both Ruby Logger and ActiveSupport::Notifications support
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/logging.rb:7
 module OmniauthOidc::Logging
   class << self
@@ -730,8 +618,6 @@ module OmniauthOidc::Logging
   end
 end
 
-# Authentication flow errors
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/errors.rb:7
 class OmniauthOidc::MissingCodeError < ::OmniauthOidc::Error; end
 
@@ -741,13 +627,9 @@ class OmniauthOidc::MissingConfigurationError < ::OmniauthOidc::ConfigurationErr
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/errors.rb:8
 class OmniauthOidc::MissingIdTokenError < ::OmniauthOidc::Error; end
 
-# Simple response objects to replace OpenIDConnect::ResponseObject classes
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:5
 module OmniauthOidc::ResponseObjects; end
 
-# Represents an OAuth2 Access Token
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:152
 class OmniauthOidc::ResponseObjects::AccessToken
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:155
@@ -775,8 +657,6 @@ class OmniauthOidc::ResponseObjects::AccessToken
   def token_type; end
 end
 
-# Represents an OIDC ID Token with claims
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:7
 class OmniauthOidc::ResponseObjects::IdToken
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:10
@@ -794,8 +674,6 @@ class OmniauthOidc::ResponseObjects::IdToken
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:18
   def iss; end
 
-  # Allow method-style access to claims
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:39
   def method_missing(method_name, *args); end
 
@@ -814,8 +692,6 @@ class OmniauthOidc::ResponseObjects::IdToken
   def respond_to_missing?(method_name, include_private = T.unsafe(nil)); end
 end
 
-# Represents OIDC UserInfo response
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:51
 class OmniauthOidc::ResponseObjects::UserInfo
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:54
@@ -845,8 +721,6 @@ class OmniauthOidc::ResponseObjects::UserInfo
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:119
   def locale; end
 
-  # Allow method-style access to custom claims
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:140
   def method_missing(method_name, *args); end
 
@@ -877,8 +751,6 @@ class OmniauthOidc::ResponseObjects::UserInfo
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:52
   def raw_attributes; end
 
-  # Standard OIDC claims
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/response_objects.rb:59
   def sub; end
 
@@ -897,8 +769,6 @@ class OmniauthOidc::ResponseObjects::UserInfo
   def respond_to_missing?(method_name, include_private = T.unsafe(nil)); end
 end
 
-# Token/JWT errors
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/errors.rb:15
 class OmniauthOidc::TokenError < ::OmniauthOidc::Error; end
 
@@ -908,12 +778,6 @@ class OmniauthOidc::TokenExpiredError < ::OmniauthOidc::TokenError; end
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/errors.rb:16
 class OmniauthOidc::TokenVerificationError < ::OmniauthOidc::TokenError; end
 
-# Thread-safe cache with a per-entry TTL.
-#
-# Reads take a short global lock only. Fetches run under a per-key lock, so a
-# slow or hanging upstream for one key never blocks cache hits for other keys,
-# and concurrent misses for the same key trigger a single fetch.
-#
 # pkg:gem/omniauth_oidc#lib/omniauth/oidc/ttl_cache.rb:9
 class OmniauthOidc::TtlCache
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/ttl_cache.rb:14
@@ -922,13 +786,6 @@ class OmniauthOidc::TtlCache
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/ttl_cache.rb:54
   def clear!; end
 
-  # Returns the cached value for key, calling the block to fetch it on a miss.
-  #
-  # ttl:           seconds an entry stays valid (defaults to the cache TTL)
-  # force_refresh: fetch even if the entry is still valid
-  # min_age:       with force_refresh, reuse an entry fetched less than this many
-  #                seconds ago. Rate limits refreshes that callers can trigger.
-  #
   # pkg:gem/omniauth_oidc#lib/omniauth/oidc/ttl_cache.rb:28
   def fetch(key, force_refresh: T.unsafe(nil), ttl: T.unsafe(nil), min_age: T.unsafe(nil), &block); end
 

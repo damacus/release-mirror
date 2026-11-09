@@ -34,6 +34,15 @@ class AuthTest < Minitest::Test
     assert_equal [@issuer['jwksUri']], @calls
   end
 
+  def test_workload_configuration_controls_token_claims_and_lifetime
+    issuer = @issuer.merge('tokenType' => 'at+jwt', 'repositoryClaim' => 'repo_id', 'maxLifetime' => 60)
+    auth = ReleaseMirror::Auth.new({'workloadIssuers' => [issuer]}, transport: ->(_url) { {'keys' => [JWT::JWK.new(KEY.public_key).export]} })
+    claims = @claims.merge('repo_id' => 42, 'exp' => Time.now.to_i + 30).reject { |key, _| key == 'repository_id' }
+    assert_equal BUILD, auth.authenticate(token(claims, KEY, {'typ' => 'at+jwt'}))
+    assert_equal 401, assert_raises(ReleaseMirror::Error) { auth.authenticate(token(claims, KEY, {'typ' => 'JWT'})) }.status
+    assert_equal 401, assert_raises(ReleaseMirror::Error) { auth.authenticate(token(claims.merge('exp' => Time.now.to_i + 120), KEY, {'typ' => 'at+jwt'})) }.status
+  end
+
   def test_human_opaque_and_jwt_access_tokens_use_introspection
     ENV['TEST_API_SECRET'] = 'test-only'
     api = {'issuer' => HUMAN['issuer'], 'audience' => 'catalogue', 'introspectionUri' => 'https://identity.example.test/introspect', 'clientId' => 'api', 'clientSecretEnv' => 'TEST_API_SECRET'}
