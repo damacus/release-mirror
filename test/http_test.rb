@@ -92,7 +92,7 @@ class HttpTest < Minitest::Test
     store.publish(ADMIN, 'widget', release)
     get '/'
     assert_equal 200, last_response.status
-    assert_includes last_response.body, 'Know what'
+    assert_includes last_response.body, 'Container releases'
     get '/services/widget'
     assert_equal 200, last_response.status
     assert_includes last_response.body, release['digest']
