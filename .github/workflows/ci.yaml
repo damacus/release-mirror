@@ -14,7 +14,30 @@ permissions:
   contents: read
   pull-requests: read
 jobs:
-  behaviour:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      application: ${{ github.event_name != 'pull_request' || steps.paths.outputs.app == 'true' }}
+    steps:
+      - name: Check whether application files changed
+        if: github.event_name == 'pull_request'
+        id: paths
+        uses: dorny/paths-filter@v4.0.3
+        with:
+          predicate-quantifier: every
+          filters: |
+            app:
+              - '**'
+              - '!docs/**'
+              - '!openspec/**'
+              - '!README.md'
+              - '!AGENTS.md'
+              - '!LICENSE*'
+              - '!.github/workflows/docs.yaml'
+
+  application:
+    needs: changes
+    if: needs.changes.outputs.application == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Monitor runner activity
@@ -37,47 +60,24 @@ jobs:
             production.cloudfront.docker.com:443
             deb.debian.org:80
             deb.debian.org:443
-      - name: Check whether application files changed
-        if: github.event_name == 'pull_request'
-        id: paths
-        uses: dorny/paths-filter@v4.0.3
-        with:
-          predicate-quantifier: every
-          filters: |
-            app:
-              - '**'
-              - '!docs/**'
-              - '!openspec/**'
-              - '!README.md'
-              - '!AGENTS.md'
-              - '!LICENSE*'
-              - '!.github/workflows/docs.yaml'
       - uses: actions/checkout@v7.0.1
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         with:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1.338.0
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         with:
           ruby-version: '4.0.9'
           bundler-cache: true
       - run: bundle exec rake test
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
       - name: Scan application templates with Brakeman
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: bundle exec brakeman --force --no-pager --quiet
       - name: Audit Ruby dependency advisories
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: bundle exec bundle-audit check --update
       - uses: actions/setup-node@v7.1.0
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         with:
           node-version: '26.13.0'
       - name: Install pinned Renovate test engine
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: npm install --prefix /tmp/renovate --ignore-scripts --no-audit --no-fund renovate@44.222.5
       - name: Start isolated synthetic catalogue
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: |
           FIXTURE_DIR=/tmp/release-mirror-fixture bundle exec ruby test/support/preview.rb >/tmp/catalogue-fixture.log 2>&1 &
           for _attempt in {1..30}; do
@@ -86,17 +86,24 @@ jobs:
           done
           exit 1
       - name: Verify language-neutral HTTP contract
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         env:
           CONTRACT_TOKEN_FILE: /tmp/release-mirror-fixture/token
         run: ruby test/contract/acceptance.rb
       - name: Verify Renovate version and digest updates
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         env:
           RENOVATE_ENTRY: /tmp/renovate/node_modules/renovate/dist/renovate.js
         run: node test/contract/renovate.mjs
       - name: Verify portable container
-        if: github.event_name != 'pull_request' || steps.paths.outputs.app == 'true'
         run: |
           docker build -t release-mirror:local .
           ruby test/contract/container.rb
+
+  behaviour:
+    needs: [changes, application]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful checks or a docs-only skip
+        env:
+          PASSED: ${{ needs.changes.result == 'success' && (needs.application.result == 'success' || (needs.changes.outputs.application == 'false' && needs.application.result == 'skipped')) }}
+        run: test "$PASSED" = true
