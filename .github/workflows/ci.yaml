@@ -20,7 +20,8 @@ on:
 permissions:
   contents: read
 jobs:
-  behaviour:
+  application:
+    name: Application checks
     runs-on: ubuntu-latest
     steps:
       - name: Monitor runner activity
