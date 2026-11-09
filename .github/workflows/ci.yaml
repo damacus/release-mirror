@@ -10,34 +10,17 @@ on:
       - 'LICENSE*'
       - '.github/workflows/docs.yaml'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'openspec/**'
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'LICENSE*'
+      - '.github/workflows/docs.yaml'
 permissions:
   contents: read
-  pull-requests: read
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      application: ${{ github.event_name != 'pull_request' || steps.paths.outputs.app == 'true' }}
-    steps:
-      - name: Check whether application files changed
-        if: github.event_name == 'pull_request'
-        id: paths
-        uses: dorny/paths-filter@v4.0.3
-        with:
-          predicate-quantifier: every
-          filters: |
-            app:
-              - '**'
-              - '!docs/**'
-              - '!openspec/**'
-              - '!README.md'
-              - '!AGENTS.md'
-              - '!LICENSE*'
-              - '!.github/workflows/docs.yaml'
-
-  application:
-    needs: changes
-    if: needs.changes.outputs.application == 'true'
+  behaviour:
     runs-on: ubuntu-latest
     steps:
       - name: Monitor runner activity
@@ -97,13 +80,3 @@ jobs:
         run: |
           docker build -t release-mirror:local .
           ruby test/contract/container.rb
-
-  final:
-    needs: [changes, application]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - name: Require successful checks or a docs-only skip
-        env:
-          PASSED: ${{ needs.changes.result == 'success' && (needs.application.result == 'success' || (needs.changes.outputs.application == 'false' && needs.application.result == 'skipped')) }}
-        run: test "$PASSED" = true

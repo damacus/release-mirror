@@ -44,8 +44,6 @@ Keep any desired deployment protection rules on the `github-pages` environment.
 
 Documentation builds run for `docs/**` and their workflow changes. Catalogue
 verification runs its application jobs only when application inputs change.
-The `application` job runs only when application inputs change. The required
-`final` check accepts either successful application checks or a docs-only
-skip; failed change detection still blocks merging.
-Do not make a path-filtered documentation build a required check for app-only
-pull requests: GitHub leaves omitted workflow checks pending.
+Application and documentation workflows use native path filters. GitHub leaves
+required checks pending when their workflow does not start, so branch protection
+must account for skipped workflows before either filtered check is required.
