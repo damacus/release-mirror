@@ -21,4 +21,12 @@ class ValidationTest < Minitest::Test
       assert_raises(ReleaseMirror::Error) { ReleaseMirror::Validation.platforms(value) }
     end
   end
+
+  def test_rejects_wrong_types_and_invalid_release_identity_fields
+    assert_raises(ReleaseMirror::Error) { ReleaseMirror::Validation.object(nil, []) }
+    assert_raises(ReleaseMirror::Error) { ReleaseMirror::Validation.reference(nil) }
+    assert_raises(ReleaseMirror::Error) { ReleaseMirror::Validation.release(release([])) }
+    assert_raises(ReleaseMirror::Error) { ReleaseMirror::Validation.release(release.merge('immutable' => 'yes')) }
+    assert_raises(ReleaseMirror::Error) { ReleaseMirror::Validation.identity({'kind' => 'other', 'issuer' => 'https://id.example.test', 'subject' => 'user'}) }
+  end
 end
