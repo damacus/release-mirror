@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/damacus/release-mirror/compare/v0.1.0...v0.1.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* allow secure browser sign-in ([#19](https://github.com/damacus/release-mirror/issues/19)) ([8211ad7](https://github.com/damacus/release-mirror/commit/8211ad7afd2864be102574d0778de8e84db42217))
+
 ## 0.1.0 (2026-11-09)
 
 
