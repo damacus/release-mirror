@@ -98,7 +98,7 @@ jobs:
           docker build -t release-mirror:local .
           ruby test/contract/container.rb
 
-  behaviour:
+  final:
     needs: [changes, application]
     if: always()
     runs-on: ubuntu-latest
