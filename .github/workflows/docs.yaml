@@ -47,7 +47,7 @@ jobs:
         run: ruby docs/site/check_links.rb docs/site/build "$DOCS_BASE_PATH"
       - name: Upload checked Pages site
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs/site/build
 
