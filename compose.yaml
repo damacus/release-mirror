@@ -11,12 +11,9 @@ services:
       - catalogue-data:/data
       - ./config/local.json:/config/config.json:ro
     read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
     restart: unless-stopped
 volumes:
   catalogue-data:

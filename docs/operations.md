@@ -2,6 +2,20 @@
 
 ## Container releases
 
+Release Please maintains a release pull request from conventional commits on
+`main`. Each release pull request updates `lib/release_mirror/version.rb` and
+`CHANGELOG.md`; merging it creates the GitHub release and tag. The first
+release is configured as `v0.1.0`. The GitHub App creates the tag, which
+triggers the container workflow. Check the container workflow result and its
+digest before deploying; a GitHub release alone does not prove the image was
+published. If publishing fails, rerun the failed container workflow; do not
+create a new tag for the same release.
+
+Install a GitHub App on this repository with contents, issues and pull requests
+write permissions. Set the repository Actions variable `RELEASE_APP_ID`
+to its app ID and the Actions secret `RELEASE_APP_PRIVATE_KEY` to its
+private key. Release Please cannot run until both are configured.
+
 A push of a release tag such as `v1.0.0` or `v1.0.0-rc.1` builds and
 publishes `ghcr.io/damacus/release-mirror` for Linux amd64 and arm64. The
 workflow publishes the version tag and `sha-<full source commit SHA>` and

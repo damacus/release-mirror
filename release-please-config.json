@@ -1,0 +1,10 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "ruby",
+      "initial-version": "0.1.0",
+      "version-file": "lib/release_mirror/version.rb",
+      "include-component-in-tag": false
+    }
+  }
+}
