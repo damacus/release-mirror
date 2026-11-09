@@ -1,0 +1,38 @@
+---
+title: Start here
+---
+# Public metadata. Private images.
+
+Release Mirror gives dependency tools a public catalogue of container tags,
+digests and platforms. Your container images, registry credentials and source
+stay in your existing systems.
+
+A producer builds and pushes an image, then publishes its actual tags and image
+digest to Release Mirror. Readers and Renovate can discover that metadata
+without signing in or accessing the private registry.
+
+## Choose your starting point
+
+| Your task | Guide |
+| --- | --- |
+| Evaluate the service on your computer | <%= link_to 'Try it locally', '/getting-started.html' %> |
+| Find a tag or image digest | <%= link_to 'Browse the catalogue', '/browsing.html' %> |
+| Create a service and allow a producer to publish | <%= link_to 'Manage services and access', '/administration.html' %> |
+| Add metadata publication to a build | <%= link_to 'Publish image metadata', '/publishing.html' %> |
+| Update private image references automatically | <%= link_to 'Connect Renovate', '/renovate.html' %> |
+| Host and back up an instance | <%= link_to 'Operate an instance', '/operations.html' %> |
+
+## What becomes public
+
+Each service has a public alias, such as `widget`. Everyone can list its tags,
+image digest, supported platforms and publication/update timestamps. Choose
+aliases and tags that you are willing to publish on an anonymous website.
+
+Release Mirror preserves actual upstream tags. It does not invent versions,
+turn builds into releases, fetch images, move registry tags or delete registry
+objects. The producer decides when a successful build should appear.
+
+This is a single-instance prototype. Live identity-provider setup, deployment
+and hosted Renovate acceptance still need checking for each installation. See
+the <%= link_to 'verification record', repository_file('docs/verification.md') %>
+for the evidence and remaining limits.

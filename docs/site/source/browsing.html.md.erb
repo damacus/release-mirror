@@ -1,0 +1,41 @@
+---
+title: Browse the catalogue
+---
+# Browse the catalogue
+
+You do not need an account to read the catalogue. Open the catalogue home page,
+select a service alias and inspect its published tags, image digests and
+platforms. A service alias is a public label; it does not reveal a private
+registry path.
+
+## Read the same data over HTTP
+
+Replace the example origin with your catalogue's public origin:
+
+```console
+curl --fail https://catalogue.example.test/api/v1/services
+curl --fail https://catalogue.example.test/api/v1/services/widget/releases
+curl --fail https://catalogue.example.test/api/v1/services/widget/releases/1.2.3
+```
+
+The release entry's `version` is the actual upstream container tag. Its `digest`
+identifies the OCI image or multi-platform index, and `platforms` lists the
+producer's published platform descriptors. `publishedAt` records the first
+publication of that tag; `updatedAt` changes when its metadata changes.
+
+Tags can move to another digest unless the producer marked the tag immutable.
+A tag called `latest` remains literally `latest`; Release Mirror never replaces
+it with a generated version.
+
+## Export public metadata
+
+`GET /api/v1/export` returns a portable JSON snapshot of all public services and
+releases. It excludes permissions and private immutability policy. Use a database
+backup when you need to preserve the full operational state.
+
+Reads must revalidate cached JSON. Deleting an entry removes it from the live
+catalogue but cannot recall copies that readers already downloaded. Deletion
+never removes an image from the upstream registry.
+
+See the <%= link_to 'API reference', '/api.html' %> for endpoints and errors, or
+<%= link_to 'Connect Renovate', '/renovate.html' %> for automated updates.

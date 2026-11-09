@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Use Release Mirror to publish public container release metadata while keeping images and registry credentials private.">
+    <title><%= current_page.data.title %> · Release Mirror</title>
+    <%= stylesheet_link_tag 'site' %>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <header><div class="header-inner"><%= link_to 'Release Mirror', '/index.html', class: 'brand' %><span>Usage documentation</span></div></header>
+    <div class="shell">
+      <nav aria-label="Documentation">
+        <% [['Start here', 'index'], ['Try it locally', 'getting-started'], ['Browse the catalogue', 'browsing'], ['Manage services and access', 'administration'], ['Publish image metadata', 'publishing'], ['Connect Renovate', 'renovate'], ['API reference', 'api'], ['Operate an instance', 'operations'], ['Contribute to the docs', 'contributing']].each do |label, page| %>
+          <%= link_to label, "/#{page}.html", 'aria-current': (current_page.path == "#{page}.html" ? 'page' : nil) %>
+        <% end %>
+        <a class="source" href="https://github.com/damacus/release-mirror">Source on GitHub ↗</a>
+      </nav>
+      <main id="content"><%= yield %></main>
+    </div>
+    <footer>Release Mirror · Public release metadata for private container images</footer>
+  </body>
+</html>

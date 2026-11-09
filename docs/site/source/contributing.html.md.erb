@@ -1,0 +1,50 @@
+---
+title: Contribute to the docs
+---
+# Contribute to the docs
+
+This site uses [Middleman](https://middlemanapp.com/) with Markdown pages and one
+shared ERB layout. Its dependencies are separate from the catalogue application.
+Run these commands from the repository root using the configured Ruby 4.0.9:
+
+```fish
+mise exec -- ruby -S bundle install --gemfile docs/site/Gemfile
+mise exec -- ruby -C docs/site -S bundle exec middleman server
+```
+
+Open [http://localhost:4567](http://localhost:4567). Edit the usage pages under
+`docs/site/source/`. The operations page renders `docs/operations.md`, and the
+build copies `docs/openapi.yaml` into the output so these contracts keep one
+canonical source.
+
+## Build and check the site
+
+```fish
+set -gx DOCS_BASE_PATH /release-mirror
+mise exec -- ruby -C docs/site -S bundle exec middleman build
+mise exec -- ruby docs/site/check_links.rb docs/site/build /release-mirror
+```
+
+The static output is `docs/site/build/`. `DOCS_BASE_PATH` defaults to `/` for local
+preview; the pipeline supplies the GitHub Pages project path for published
+links and stylesheets. The link check verifies generated local links, anchors
+and assets without contacting a live catalogue or external website.
+
+## Publish to GitHub Pages
+
+The **Documentation** workflow builds and checks documentation changes on pull
+requests. A push of those changes to `main` uploads the checked output and
+publishes it through the `github-pages` environment. Pull requests cannot deploy.
+You can also dispatch the workflow manually on `main` to republish.
+
+Before the first publication, a repository administrator must select **GitHub
+Actions** under **Settings → Pages → Build and deployment → Source**. The workflow
+does not enable Pages, configure a custom domain or deploy the catalogue service.
+Keep any desired deployment protection rules on the `github-pages` environment.
+
+Documentation builds run for `docs/**` and their workflow changes. Catalogue
+verification runs its application jobs only when application inputs change.
+Its small change-detection job still concludes on every pull request, allowing
+the existing `behaviour` check to report a successful skip for docs-only work.
+Do not make a path-filtered documentation build a required check for app-only
+pull requests: GitHub leaves omitted workflow checks pending.

@@ -5,3 +5,7 @@
 /.env
 /config/local.json
 /node_modules/
+/docs/site/.bundle/
+/docs/site/.cache/
+/docs/site/build/
+/docs/site/vendor/

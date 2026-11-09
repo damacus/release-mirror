@@ -4,6 +4,10 @@ A public metadata catalogue for private container images. Publish actual upstrea
 
 The catalogue does not create versions or tags, decide which builds are releases, fetch images or delete upstream registry objects. The producer decides when to publish after a successful build and push. An accepted build identity for an approved repository can publish regardless of branch or event, including accepted pull-request builds.
 
+## Usage documentation
+
+The [Middleman documentation site](docs/site/source/index.html.md.erb) covers browsing, administration, publishing and Renovate setup. See [the documentation contributor guide](docs/site/source/contributing.html.md.erb) to preview and build it locally. A separate documentation workflow builds and publishes to GitHub Pages after repository Pages setup; application verification skips documentation-only changes.
+
 ## Run locally
 
 Requires Ruby 4.0.9 and Bundler, or Docker. With mise and Fish:

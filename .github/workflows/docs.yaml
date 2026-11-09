@@ -1,0 +1,70 @@
+name: Documentation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yaml'
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/docs/site/Gemfile
+      DOCS_BASE_PATH: /${{ github.event.repository.name }}
+    steps:
+      - name: Monitor runner activity
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
+        with:
+          egress-policy: block
+          allowed-endpoints: >-
+            github.com:443
+            api.github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+            release-assets.githubusercontent.com:443
+            rubygems.org:443
+            index.rubygems.org:443
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ruby/setup-ruby@v1.338.0
+        with:
+          ruby-version: '4.0.9'
+          bundler-cache: true
+      - name: Build the usage documentation
+        working-directory: docs/site
+        run: bundle exec middleman build
+      - name: Check generated links, anchors and assets
+        run: ruby docs/site/check_links.rb docs/site/build "$DOCS_BASE_PATH"
+      - name: Upload checked Pages site
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/site/build
+
+  publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish documentation to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

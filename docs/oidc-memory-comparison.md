@@ -1,6 +1,6 @@
 # Browser OIDC memory investigation
 
-Measured on 9 November 2026 with Ruby 4.0.9, using synthetic data. These are exploratory measurements, not a production capacity guarantee.
+Measured on 9 November 2026 with Ruby 4.0.9, using synthetic data, before replacing the browser client. These are historical exploratory measurements, not a production capacity guarantee. The application now uses `omniauth_oidc` with the issuer and redirect safeguards described below.
 
 ## Current strategy and lazy loading
 
@@ -24,4 +24,4 @@ The existing integration uses authorization code, state, nonce, S256 PKCE, a con
 
 [`oauth2`](https://github.com/ruby-oauth/oauth2/blob/main/OIDC.md) is maintained but documents that ID-token verification, nonce, PKCE and session/state handling are the application's responsibility. Adopting it would move security-sensitive OIDC logic into this application. Its lower library-load RSS does not include that implementation.
 
-The current strategy is retained. Lazy loading provides the common-case saving without replacing its authentication protocol implementation. Reconsider a lighter strategy only after a focused security and compatibility review and real-provider acceptance testing.
+The application subsequently adopted `omniauth_oidc` while retaining lazy loading. Its regression suite exercises fixed issuer and redirect handling and token validation. Real Zitadel acceptance testing remains necessary before deployment.

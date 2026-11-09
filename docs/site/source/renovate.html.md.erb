@@ -1,0 +1,43 @@
+---
+title: Connect Renovate
+---
+# Connect Renovate
+
+Renovate reads the catalogue anonymously using a custom datasource. Private
+image locations remain in the consumer repository; the catalogue needs only the
+public service alias, tag and digest.
+
+## Configure a consumer
+
+1. Start from the <%= link_to 'Renovate configuration', repository_file('examples/renovate/renovate.json') %>
+   and <%= link_to 'synthetic image references', repository_file('examples/renovate/images.yaml') %>.
+2. Replace `https://catalogue.example.test` with your catalogue origin and the
+   synthetic consumer references with your own image references.
+3. Set the dependency name used by the custom datasource to the existing public
+   service alias, such as `widget`.
+4. Run Renovate against an isolated consumer and review its proposed tag and
+   digest update before enabling it on a real repository.
+
+The feed is `GET /api/v1/services/widget/renovate`. Each record supplies the
+actual tag as `version`, the complete digest as `digest` and a
+`releaseTimestamp`. The supplied regex manager captures both version and digest
+so Renovate can propose a new tag plus digest or a changed digest for the same
+moving tag.
+
+## Avoid duplicate lookups
+
+The standalone example enables only `custom.regex`. When merging it into an
+existing Renovate configuration, preserve the other managers you need and
+exclude these exact private packages from Docker managers separately. Otherwise
+the same image may also cause a private registry lookup.
+
+## Match your actual tag scheme
+
+The versioned example uses semantic versioning. The `latest` example uses a
+literal-tag regex versioning rule, allowing digest-only updates while that tag
+stays `latest`. Choose versioning that matches your producer's real tags;
+Release Mirror never translates them into a new version scheme.
+
+The repository's integration test exercises the pinned Renovate engine's regex
+extraction, HTTP datasource and update selection. A live hosted Renovate
+installation remains a separate acceptance step for your deployment.
