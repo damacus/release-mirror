@@ -6,16 +6,31 @@ on:
       - 'docs/**'
       - '.github/workflows/docs.yaml'
   pull_request:
-    paths:
-      - 'docs/**'
-      - '.github/workflows/docs.yaml'
   workflow_dispatch:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.paths.outputs.run || 'true' }}
+    steps:
+      - name: Check documentation changes
+        if: github.event_name == 'pull_request'
+        id: paths
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" --jq '[.[] | .filename, (.previous_filename // empty)] | any(.[]; test("^(docs/|\\.github/workflows/docs\\.yaml$)"))' > "$RUNNER_TEMP/docs-changes"
+          if grep -q '^true$' "$RUNNER_TEMP/docs-changes"; then echo 'run=true' >> "$GITHUB_OUTPUT"; else echo 'run=false' >> "$GITHUB_OUTPUT"; fi
   build:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/docs/site/Gemfile
@@ -67,3 +82,13 @@ jobs:
       - name: Publish documentation to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  docs:
+    needs: [changes, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check documentation result
+        env:
+          PASSED: ${{ needs.changes.result == 'success' && (needs.build.result == 'success' || (needs.changes.outputs.run == 'false' && needs.build.result == 'skipped')) }}
+        run: test "$PASSED" = true

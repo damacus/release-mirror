@@ -10,17 +10,28 @@ on:
       - 'LICENSE*'
       - '.github/workflows/docs.yaml'
   pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - 'openspec/**'
-      - 'README.md'
-      - 'AGENTS.md'
-      - 'LICENSE*'
-      - '.github/workflows/docs.yaml'
 permissions:
   contents: read
+  pull-requests: read
 jobs:
-  behaviour:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.paths.outputs.run || 'true' }}
+    steps:
+      - name: Check application changes
+        if: github.event_name == 'pull_request'
+        id: paths
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh api --paginate "repos/$REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" --jq '[.[] | .filename, (.previous_filename // empty)] | any(.[]; test("^(docs/|openspec/|README\\.md$|AGENTS\\.md$|LICENSE[^/]*$|\\.github/workflows/docs\\.yaml$)") | not)' > "$RUNNER_TEMP/app-changes"
+          if grep -q '^true$' "$RUNNER_TEMP/app-changes"; then echo 'run=true' >> "$GITHUB_OUTPUT"; else echo 'run=false' >> "$GITHUB_OUTPUT"; fi
+  application:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Monitor runner activity
@@ -80,3 +91,13 @@ jobs:
         run: |
           docker build -t release-mirror:local .
           ruby test/contract/container.rb
+
+  behaviour:
+    needs: [changes, application]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check application result
+        env:
+          PASSED: ${{ needs.changes.result == 'success' && (needs.application.result == 'success' || (needs.changes.outputs.run == 'false' && needs.application.result == 'skipped')) }}
+        run: test "$PASSED" = true
