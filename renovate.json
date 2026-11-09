@@ -4,6 +4,12 @@
   "lockFileMaintenance": {"enabled": true},
   "packageRules": [
     {
+      "description": "Squash merge minor and patch updates after required checks",
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeStrategy": "squash"
+    },
+    {
       "description": "Keep the Ruby runtime pins and image aligned",
       "matchPackageNames": ["ruby", "ruby-version"],
       "matchDatasources": ["ruby-version", "docker"],
