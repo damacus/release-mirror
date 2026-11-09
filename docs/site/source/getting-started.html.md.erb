@@ -1,0 +1,47 @@
+---
+title: Try it locally
+---
+# Try it locally
+
+Use the read-only local configuration to explore the catalogue without creating
+identity-provider accounts. You need Git, Ruby 4.0.9 and Bundler. The repository
+also supplies a mise configuration for the supported runtime.
+
+## Start the catalogue
+
+Clone the public repository, open its directory and run these commands in Fish:
+
+```fish
+git clone https://github.com/damacus/release-mirror.git
+cd release-mirror
+mise trust
+mise install
+mise exec -- ruby -S bundle install
+cp config/local.example.json config/local.json
+set -gx SESSION_SECRET (mise exec -- ruby -rsecurerandom -e 'print SecureRandom.hex(64)')
+mise run serve
+```
+
+Open [http://localhost:9292](http://localhost:9292). The local catalogue starts
+empty. You can browse it and read the anonymous API. Writes require configured
+identities and explicit permissions; there is no local bypass token.
+
+```console
+curl --fail http://localhost:9292/health
+curl --fail http://localhost:9292/api/v1/services
+```
+
+The second request returns `{"services":[]}` before any services have been added.
+Stop Puma with Ctrl+C.
+
+## Enable administration and publishing
+
+To work with real entries, configure a trusted browser identity provider and an
+explicit bootstrap administrator. Follow <%= link_to 'Manage services and access', '/administration.html' %>
+and the <%= link_to 'identity setup checklist', '/operations.html#identity-setup-before-real-publication' %>.
+Each installation supplies its own issuer, client configuration and secrets.
+
+For a container, set `databasePath` to `/data/catalogue.sqlite3` in your local
+configuration and use `docker compose up --build`. Compose binds only to
+loopback; a production instance needs an HTTPS reverse proxy and persistent
+storage. See <%= link_to 'Operate an instance', '/operations.html' %>.

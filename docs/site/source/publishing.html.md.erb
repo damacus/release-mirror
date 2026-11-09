@@ -1,0 +1,83 @@
+---
+title: Publish image metadata
+---
+# Publish image metadata
+
+Publish after the producer successfully builds and pushes the image. The
+catalogue service must already exist, and an administrator must grant your
+trusted workload repository `publish` access to it.
+
+## Prepare the metadata
+
+Write a JSON payload containing the actual pushed tags, OCI image or index
+digest, and platforms. This is a synthetic example; replace every value with
+metadata from your successful push:
+
+```json
+{
+  "tags": ["1.2.3", "latest"],
+  "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "platforms": [
+    {"os": "linux", "architecture": "amd64"},
+    {"os": "linux", "architecture": "arm64", "variant": "v8"}
+  ]
+}
+```
+
+List only tags that actually exist upstream. A Git commit SHA is not an image
+digest. Publication adds new tags or updates existing mutable tags atomically.
+Add `"immutable": true` only when the supplied upstream tags must permanently
+keep the same image and platforms. That policy is private and cannot later be
+removed from the tag.
+
+Requests allow at most 32 tags, 32 platforms and 1 MiB of JSON. Unknown fields,
+notes, source URLs, annotations and raw build webhooks are rejected. An optional
+`reference` can carry a tag or digest, but explicit fields must agree; its
+registry and repository portion is discarded before persistence.
+
+## Connect a Forgejo job
+
+Copy the <%= link_to 'standard-library Ruby publisher', repository_file('examples/publish.rb') %>
+into the producer as `release-mirror-publish.rb`, then adapt the
+<%= link_to 'Forgejo job fragment', repository_file('examples/forgejo-job.yaml') %>:
+
+```yaml
+jobs:
+  build-and-publish:
+    runs-on: docker
+    enable-openid-connect: true
+    steps:
+      # Existing checkout, image build and successful push go here.
+      # Write metadata.json from that push before publishing.
+      - name: Publish image metadata
+        env:
+          CATALOGUE_URL: https://catalogue.example.test
+          CATALOGUE_SERVICE: widget
+          CATALOGUE_AUDIENCE: release-catalogue
+          CATALOGUE_PAYLOAD_FILE: metadata.json
+        run: ruby release-mirror-publish.rb
+```
+
+The runner must have Ruby and workload identity support. The audience must match
+the operator's trusted workload configuration. The helper requests a short-lived
+identity token and sends the payload to
+`POST /api/v1/services/widget/releases`; it does not print tokens or payloads.
+Verify the actual Forgejo issuer, repository claim and runner versions before
+using a live producer.
+
+## Diagnose a rejected request
+
+| Response | Check |
+| --- | --- |
+| `401` | Token issuer, audience, expiry, signing keys and expected token type |
+| `403` | Exact repository ID has `publish` for this service |
+| `404` | Administrator has created the service alias |
+| `409` | Existing tag's immutable policy conflicts with the update |
+| `413` | Request is within the 1 MiB limit |
+| `415` | Request has `Content-Type: application/json` |
+| `422` | Tags, digest, platforms and allowed fields match the schema |
+| `503` | Configured identity-provider endpoint is available |
+
+Errors deliberately omit rejected values. Inspect configuration and synthetic
+requests without printing credentials or raw identity tokens. Check the
+<%= link_to 'API reference', '/api.html' %> for the full contract.

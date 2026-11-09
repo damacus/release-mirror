@@ -1,0 +1,50 @@
+---
+title: Manage services and access
+---
+# Manage services and access
+
+An operator must configure the trusted identity providers and exact bootstrap
+human identity before administration is available. Signing in alone gives a
+new user read-only access.
+
+## Create a service
+
+1. Sign in using the catalogue's configured browser provider.
+2. As a global administrator, create a service with a public alias, such as
+   `widget`.
+3. Open the permissions dashboard and grant the producer's trusted workload
+   identity the `publish` role for that service.
+4. Publish one known build, then inspect the service anonymously to confirm the
+   metadata you intended to make public.
+
+Aliases use 1–64 lowercase letters, digits, underscores or hyphens, starting with
+a letter or digit. Keep private registry names and internal project details out
+of the public alias.
+
+## Choose the permission
+
+| Role | Identity and scope | What it permits |
+| --- | --- | --- |
+| `admin` | Human identity, global `*` scope | Manage services, releases and grants |
+| `publish` | Workload identity, one existing service | Add and update that service's releases |
+
+A workload publisher cannot delete releases, create services or grant access.
+The workload subject is the immutable repository claim selected by operator
+configuration: for Forgejo this is `repository_id`, rather than the display name
+or repository URL. Supply the exact trusted issuer and repository ID.
+
+The service accepts any valid build identity for an authorised repository,
+including accepted pull-request builds. The producer chooses when to publish;
+there is no additional main-branch or release-event condition.
+
+## Revoke access or remove data
+
+Administrators can remove a database grant from the permissions dashboard.
+Revocation applies to the next request, including requests from an existing
+browser session. The configured bootstrap administrator remains an administrator
+until the operator changes configuration.
+
+Deleting a release removes its live catalogue entry. Deleting a service also
+removes its releases and service grants. These actions leave registry images
+untouched. Restoring an older database backup restores the entries and grants
+that existed in that backup.

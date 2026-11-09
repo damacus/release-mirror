@@ -1,0 +1,51 @@
+---
+title: API reference
+---
+# API reference
+
+All catalogue URLs below are relative to your instance's public origin. Public
+reads need no authentication. Mutations use a trusted workload identity or an
+introspected human API access token with the required role. A browser ID token
+is not an API credential.
+
+<%= link_to 'Download the OpenAPI 3.1 contract', 'openapi.yaml' %> for schemas,
+response shapes and status codes. It is copied from the repository's canonical
+contract whenever this site builds.
+
+## Public reads
+
+| Method and path | Result |
+| --- | --- |
+| `GET /health` | Process health |
+| `GET /api/v1/services` | Service aliases |
+| `GET /api/v1/services/{service}/releases` | Current releases for a service |
+| `GET /api/v1/services/{service}/releases/{tag}` | One current release |
+| `GET /api/v1/services/{service}/renovate` | Renovate custom datasource feed |
+| `GET /api/v1/export` | Public metadata snapshot |
+
+## Authenticated operations
+
+| Method and path | Required role |
+| --- | --- |
+| `POST /api/v1/services` | Global human administrator |
+| `DELETE /api/v1/services/{service}` | Global human administrator |
+| `POST /api/v1/services/{service}/releases` | Publisher for that service or global human administrator |
+| `DELETE /api/v1/services/{service}/releases/{tag}` | Global human administrator |
+| `POST /api/v1/import` | Normal permissions for each imported entry; creating services requires global administrator |
+| `GET /api/v1/grants` | Global human administrator |
+| `POST /api/v1/grants` | Global human administrator |
+| `DELETE /api/v1/grants/{id}` | Global human administrator |
+
+Send JSON with `Content-Type: application/json` and a Bearer credential in the
+Authorization header. Obtain credentials through the configured identity
+provider; Release Mirror does not issue a shared API token. The
+<%= link_to 'publisher guide', '/publishing.html' %> supplies a workload example.
+
+## Import and export
+
+Public snapshots use `schemaVersion: 1` with a list of services and releases.
+Import validates the entire request before merging atomically. New records keep
+their imported timestamps; existing records retain server-managed timestamps.
+Invalid or duplicate data rejects the request, and requests over 1 MiB must be
+split. Snapshot export omits grants and immutable policy; it does not replace a
+full <%= link_to 'database backup', '/operations.html#backup-and-restore' %>.

@@ -5,9 +5,29 @@ on:
 permissions:
   contents: read
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      application: ${{ steps.paths.outputs.application }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Detect application changes
+        id: paths
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: ruby .github/scripts/application_changes.rb
   behaviour:
+    needs: changes
+    if: always() && (needs.changes.result != 'success' || needs.changes.outputs.application == 'true')
     runs-on: ubuntu-latest
     steps:
+      - name: Require successful change detection
+        if: needs.changes.result != 'success'
+        run: exit 1
       - name: Monitor runner activity
         uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
