@@ -44,7 +44,7 @@ Every alias and published tag is discoverable by design. Public release JSON inc
 
 - [OpenAPI 3.1](docs/openapi.yaml): endpoints, schemas, status codes and authentication.
 - [Publication example](examples/publication.json): multiple real upstream tags for one image digest and platform set.
-- [Publisher](examples/publish.rb) and [Forgejo job fragment](examples/forgejo-job.yaml): request a workload identity and submit after the producer's push succeeds.
+- [Reusable Forgejo action](action.yml) and [job fragment](examples/forgejo-job.yaml): supply actual tags, digest and OCI platform objects after a successful push. The action creates the JSON and requests workload identity using the [standard-library Ruby publisher](examples/publish.rb).
 - [Renovate consumer](examples/renovate/renovate.json) and [synthetic image references](examples/renovate/images.yaml): custom datasource and regex manager; private paths remain in the consumer.
 
 Tag grammar follows distribution/reference: 1–128 ASCII characters, starting with a letter, digit or underscore, followed by letters, digits, underscores, periods or hyphens. Supported content digest algorithms are SHA-256/384/512 with the exact lowercase hex length. A Git SHA is not an image digest. Platform components are bounded ASCII tokens; optional OCI `variant`, `os.version` and `os.features` are supported. Unknown fields, annotations, source URLs, notes and raw webhooks are rejected. Requests are limited to 1 MiB and nested JSON to 16 levels.

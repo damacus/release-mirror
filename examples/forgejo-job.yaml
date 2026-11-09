@@ -1,5 +1,5 @@
 # Merge this job configuration into the producer's successful build/push job.
-# The producer supplies metadata.json containing its ACTUAL pushed tags/digest.
+# The producer supplies its ACTUAL pushed tags/digest/platforms.
 # It decides when to publish; this example adds no tag or release policy.
 jobs:
   build-and-publish:
@@ -7,10 +7,14 @@ jobs:
     enable-openid-connect: true
     steps:
       # Your existing checkout/build/push steps must precede this step.
+      # Ruby and CA certificates must be available in the job container.
       - name: Publish the pushed image metadata
-        env:
-          CATALOGUE_URL: https://catalogue.example.test
-          CATALOGUE_SERVICE: widget
-          CATALOGUE_AUDIENCE: release-catalogue
-          CATALOGUE_PAYLOAD_FILE: metadata.json
-        run: ruby release-mirror-publish.rb
+        # Pin to a reviewed commit containing action.yml before use.
+        uses: https://github.com/damacus/release-mirror@main
+        with:
+          service: widget
+          tags: |
+            v1.2.3
+            actual-upstream-tag
+          digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          platforms: '[{"os":"linux","architecture":"arm64","variant":"v8"}]'

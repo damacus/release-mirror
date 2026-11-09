@@ -1,0 +1,40 @@
+name: Publish Release Mirror metadata
+description: Publish actual pushed image tags, digest and platforms using Forgejo workload identity.
+inputs:
+  service:
+    description: Existing public catalogue service alias.
+    required: true
+  tags:
+    description: Actual pushed tags, one per line. Blank lines are ignored.
+    required: true
+  digest:
+    description: Actual pushed OCI image or image index digest.
+    required: true
+  platforms:
+    description: JSON array of actual OCI platform objects, including any variants or OS features.
+    required: true
+  immutable:
+    description: Set true only for actual upstream tags that must permanently retain this digest and platforms.
+    default: 'false'
+  url:
+    description: HTTPS catalogue base URL.
+    default: https://releases.damacus.io
+  audience:
+    description: Workload token audience trusted by the catalogue.
+    default: https://releases.damacus.io
+runs:
+  using: composite
+  steps:
+    - name: Publish image metadata
+      shell: sh
+      env:
+        CATALOGUE_URL: ${{ inputs.url }}
+        CATALOGUE_SERVICE: ${{ inputs.service }}
+        CATALOGUE_AUDIENCE: ${{ inputs.audience }}
+        CATALOGUE_TAGS: ${{ inputs.tags }}
+        CATALOGUE_DIGEST: ${{ inputs.digest }}
+        CATALOGUE_PLATFORMS: ${{ inputs.platforms }}
+        CATALOGUE_IMMUTABLE: ${{ inputs.immutable }}
+        CATALOGUE_PUBLISHER: ${{ github.action_path }}/examples/publish.rb
+        CATALOGUE_PAYLOAD_FILE: ''
+      run: ruby "$CATALOGUE_PUBLISHER"

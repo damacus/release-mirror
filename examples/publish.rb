@@ -11,6 +11,18 @@ begin
   service = ENV.fetch('CATALOGUE_SERVICE')
   raise unless /\A[a-z0-9][a-z0-9_-]{0,63}\z/.match?(service)
   audience = ENV.fetch('CATALOGUE_AUDIENCE')
+  payload_file = ENV['CATALOGUE_PAYLOAD_FILE']
+  payload = if payload_file && !payload_file.empty?
+    File.binread(payload_file, 1_048_577)
+  else
+    JSON.generate(
+      'tags' => ENV.fetch('CATALOGUE_TAGS').lines.map(&:chomp).reject(&:empty?),
+      'digest' => ENV.fetch('CATALOGUE_DIGEST'),
+      'platforms' => JSON.parse(ENV.fetch('CATALOGUE_PLATFORMS')),
+      'immutable' => JSON.parse(ENV.fetch('CATALOGUE_IMMUTABLE', 'false'))
+    )
+  end
+  raise if payload.bytesize > 1_048_576
   token_url = URI(ENV.fetch('ACTIONS_ID_TOKEN_REQUEST_URL'))
   raise unless token_url.is_a?(URI::HTTPS) && !token_url.userinfo && !token_url.fragment
   query = URI.decode_www_form(token_url.query.to_s).reject { |key, _| key == 'audience' }
@@ -20,8 +32,6 @@ begin
   response = Net::HTTP.start(token_url.host, token_url.port, use_ssl: true, open_timeout: 5, read_timeout: 10) { |http| http.request(token_request) }
   raise unless response.code == '200' && response.body.bytesize <= 32768
   token = JSON.parse(response.body).fetch('value')
-  payload = File.binread(ENV.fetch('CATALOGUE_PAYLOAD_FILE'), 1_048_577)
-  raise if payload.bytesize > 1_048_576
   target = URI("#{base.to_s.delete_suffix('/')}/api/v1/services/#{service}/releases")
   request = Net::HTTP::Post.new(target)
   request['Authorization'] = "Bearer #{token}"
