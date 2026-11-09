@@ -1,6 +1,7 @@
 ENV['RACK_ENV'] = 'test'
 ENV['TEST_SESSION_SECRET'] = 's' * 96
 require 'minitest/autorun'
+require 'minitest/mock'
 require 'rack/test'
 require 'tmpdir'
 require_relative '../lib/release_mirror/app'

@@ -34,6 +34,31 @@ class AuthTest < Minitest::Test
     assert_equal [@issuer['jwksUri']], @calls
   end
 
+  def test_invalid_or_unavailable_workload_keys_fail_closed
+    [{}, {'keys' => []}, {'keys' => Array.new(33) { {} }}].each do |response|
+      auth = ReleaseMirror::Auth.new({'workloadIssuers' => [@issuer]}, transport: ->(_url) { response })
+      assert_equal 503, assert_raises(ReleaseMirror::Error) { auth.authenticate(token) }.status
+    end
+    auth = ReleaseMirror::Auth.new({'workloadIssuers' => [@issuer]}, transport: ->(_url) { raise ReleaseMirror::Error.new('Authentication unavailable', 503) })
+    assert_equal 503, assert_raises(ReleaseMirror::Error) { auth.authenticate(token) }.status
+  end
+
+  def test_rejects_malformed_credentials_before_contacting_provider
+    [nil, '', 'invalid token', 'x' * 16_385].each do |credential|
+      assert_equal 401, assert_raises(ReleaseMirror::Error) { @auth.authenticate(credential) }.status
+    end
+    assert_empty @calls
+  end
+
+  def test_workload_configuration_controls_token_claims_and_lifetime
+    issuer = @issuer.merge('tokenType' => 'at+jwt', 'repositoryClaim' => 'repo_id', 'maxLifetime' => 60)
+    auth = ReleaseMirror::Auth.new({'workloadIssuers' => [issuer]}, transport: ->(_url) { {'keys' => [JWT::JWK.new(KEY.public_key).export]} })
+    claims = @claims.merge('repo_id' => 42, 'exp' => Time.now.to_i + 30).reject { |key, _| key == 'repository_id' }
+    assert_equal BUILD, auth.authenticate(token(claims, KEY, {'typ' => 'at+jwt'}))
+    assert_equal 401, assert_raises(ReleaseMirror::Error) { auth.authenticate(token(claims, KEY, {'typ' => 'JWT'})) }.status
+    assert_equal 401, assert_raises(ReleaseMirror::Error) { auth.authenticate(token(claims.merge('exp' => Time.now.to_i + 120), KEY, {'typ' => 'at+jwt'})) }.status
+  end
+
   def test_human_opaque_and_jwt_access_tokens_use_introspection
     ENV['TEST_API_SECRET'] = 'test-only'
     api = {'issuer' => HUMAN['issuer'], 'audience' => 'catalogue', 'introspectionUri' => 'https://identity.example.test/introspect', 'clientId' => 'api', 'clientSecretEnv' => 'TEST_API_SECRET'}
@@ -53,6 +78,23 @@ class AuthTest < Minitest::Test
       assert_raises(ReleaseMirror::Error) { auth.authenticate('opaque') }
       result.replace(saved)
     end
+  ensure
+    ENV.delete('TEST_API_SECRET')
+  end
+
+  def test_human_api_rejects_not_yet_valid_tokens_and_fails_closed_on_outage
+    api = {'issuer' => HUMAN['issuer'], 'audience' => 'catalogue', 'introspectionUri' => 'https://identity.example.test/introspect', 'clientId' => 'api', 'clientSecretEnv' => 'TEST_API_SECRET'}
+    ENV['TEST_API_SECRET'] = 'test-only'
+    result = {'active' => true, 'token_type' => 'Bearer', 'iss' => HUMAN['issuer'], 'aud' => ['catalogue'], 'exp' => Time.now.to_i + 600, 'sub' => HUMAN['subject']}
+    auth = ReleaseMirror::Auth.new({'humanApi' => api}, transport: ->(_url, **_options) { result })
+    assert_equal HUMAN, auth.authenticate('opaque')
+    [{'nbf' => Time.now.to_i + 60}, {'iat' => Time.now.to_i + 60}, {'nbf' => 'invalid'}, {'iat' => 'invalid'}].each do |change|
+      result.merge!(change)
+      assert_equal 401, assert_raises(ReleaseMirror::Error) { auth.authenticate('opaque') }.status
+      change.each_key { |key| result.delete(key) }
+    end
+    unavailable = ReleaseMirror::Auth.new({'humanApi' => api}, transport: ->(_url, **_options) { raise ReleaseMirror::Error.new('Authentication unavailable', 503) })
+    assert_equal 503, assert_raises(ReleaseMirror::Error) { unavailable.authenticate('opaque') }.status
   ensure
     ENV.delete('TEST_API_SECRET')
   end

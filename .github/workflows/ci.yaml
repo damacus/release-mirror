@@ -51,6 +51,8 @@ jobs:
           ruby-version: '4.0.9'
           bundler-cache: true
       - run: bundle exec rake test
+      - name: Check Ruby types
+        run: bundle exec srb tc
       - name: Scan application templates with Brakeman
         run: bundle exec brakeman --force --no-pager --quiet
       - name: Audit Ruby dependency advisories

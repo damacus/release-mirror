@@ -122,6 +122,26 @@ class BrowserTest < Minitest::Test
     assert_equal 401, last_response.status
   end
 
+  def test_admin_can_manage_publisher_grants_and_reject_invalid_forms
+    store.create_service(ADMIN, 'widget')
+    auth = begin_login
+    provider_response(auth)
+    get 'https://catalogue.example.test/auth/oidc/callback', {'code' => 'fixture-code', 'state' => auth['state']}
+    get 'https://catalogue.example.test/permissions', {'scope' => 'widget'}
+    token = csrf_token
+    post 'https://catalogue.example.test/permissions', {'csrf' => token, 'role' => 'invalid', 'scope' => 'widget', 'issuer' => BUILD['issuer'], 'subject' => BUILD['subject']}
+    assert_equal 422, last_response.status
+    post 'https://catalogue.example.test/permissions', {'csrf' => token, 'role' => 'publish', 'scope' => 'widget', 'issuer' => BUILD['issuer'], 'subject' => BUILD['subject']}
+    assert_equal 303, last_response.status
+    assert store.allowed?(BUILD, 'add', 'widget')
+    grant_id = store.grants(ADMIN, 'widget').first.fetch(:id)
+    post 'https://catalogue.example.test/permissions/invalid/delete', {'csrf' => token}
+    assert_equal 422, last_response.status
+    post "https://catalogue.example.test/permissions/#{grant_id}/delete", {'csrf' => token}
+    assert_equal 303, last_response.status
+    refute store.allowed?(BUILD, 'add', 'widget')
+  end
+
   def test_state_nonce_and_callback_injection_fail_closed
     auth = begin_login
     get 'https://catalogue.example.test/auth/oidc/callback', {'code' => 'fixture-code', 'state' => 'wrong'}
@@ -142,6 +162,20 @@ class BrowserTest < Minitest::Test
     assert_equal 401, last_response.status
     get 'https://catalogue.example.test/auth/oidc/callback', {'code' => 'fixture-code', 'state' => auth['state']}
     assert_equal 401, last_response.status
+  end
+
+  def test_strategy_rejects_callback_with_missing_login_secrets
+    begin_login
+    strategy = ReleaseMirror::BrowserOIDC.new(->(_env) { [204, {}, []] })
+    env = Rack::MockRequest.env_for('https://catalogue.example.test/auth/oidc/callback?code=fixture&state=fixture')
+    env['rack.session'] = {'login_started' => Time.now.to_i}
+    assert_equal 401, strategy.call(env).first
+  end
+
+  def test_strategy_passes_public_requests_to_application
+    begin_login
+    strategy = ReleaseMirror::BrowserOIDC.new(->(_env) { [204, {}, []] })
+    assert_equal 204, strategy.call('PATH_INFO' => '/health').first
   end
 
   def test_login_and_authenticated_session_expire

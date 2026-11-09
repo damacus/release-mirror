@@ -71,6 +71,11 @@ mise run test
 
 This runs request, persistence, permission, JWT, introspection and OIDC browser tests. Identity-provider traffic is controlled in tests; no live accounts or proprietary images are needed.
 
+Run `bundle exec srb tc` to check Sorbet types. Typing is gradual: validation,
+configuration, authentication and the browser OIDC adapter are checked; the
+Sinatra routes and persistence still need typed coverage. Regenerate dependency
+interfaces with `bin/tapioca gem` when changing gems.
+
 For language-neutral HTTP acceptance against the isolated synthetic server, run in one terminal:
 
 ```fish

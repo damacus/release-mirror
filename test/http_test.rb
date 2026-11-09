@@ -33,6 +33,8 @@ class HttpTest < Minitest::Test
     api_post '/api/v1/services/widget/releases', release
     assert_equal 200, last_response.status
     assert_equal %w[digest platforms publishedAt service updatedAt version], body['releases'][0].keys.sort
+    get '/api/v1/services/widget/releases/v1.0.0'
+    assert_equal 'v1.0.0', body.fetch('version')
     header 'Authorization', nil
     get '/api/v1/services/widget/renovate'
     assert_equal release['digest'], body['releases'][0]['digest']
@@ -95,6 +97,11 @@ class HttpTest < Minitest::Test
     assert_nil last_response['set-cookie']
   end
 
+  def test_callback_without_verified_login_is_denied
+    get '/auth/oidc/callback'
+    assert_equal 401, last_response.status
+  end
+
   def test_dashboard_public_values_and_csrf
     store.publish(ADMIN, 'widget', release)
     get '/'
@@ -118,5 +125,72 @@ class HttpTest < Minitest::Test
     api_post '/api/v1/import', snapshot
     assert_equal 422, last_response.status
     refute store.exists?('bad')
+  end
+
+  def test_import_rejects_invalid_calendar_date_and_rolls_back
+    store.publish(ADMIN, 'widget', release)
+    original = store.export
+    invalid = Marshal.load(Marshal.dump(original))
+    invalid['services'][0]['releases'][0]['publishedAt'] = '2026-99-01T00:00:00Z'
+    api_post '/api/v1/import', invalid
+    assert_equal 422, last_response.status
+    assert_equal 'Invalid request', body['error']
+    assert_equal original, store.export
+  end
+
+  def test_rejects_invalid_authorization_and_request_boundaries
+    header 'Authorization', 'Basic secret'
+    get '/api/v1/grants'
+    assert_equal 401, last_response.status
+    header 'Authorization', 'Bearer too many parts'
+    get '/api/v1/grants'
+    assert_equal 401, last_response.status
+    header 'Authorization', nil
+    get "/api/v1/services?#{'q' * 4097}"
+    assert_equal 400, last_response.status
+    get '/' + ('a' * 2049)
+    assert_equal 400, last_response.status
+    post '/services', JSON.generate(name: 'x'), {'CONTENT_TYPE' => 'application/json'}
+    assert_equal 403, last_response.status
+    boundary = ReleaseMirror::Boundary.new(->(_env) { [200, {}, []] }, config)
+    env = Rack::MockRequest.env_for('https://catalogue.example.test/services', method: 'POST', input: 'csrf=valid', 'CONTENT_TYPE' => 'application/x-www-form-urlencoded', 'HTTP_ORIGIN' => 'https://evil.example.test')
+    env['HTTP_HOST'] = 'catalogue.example.test'
+    env['rack.session'] = {'csrf' => 'valid'}
+    assert_equal 403, boundary.call(env).first
+  end
+
+  def test_admin_can_grant_and_revoke_publisher_through_api
+    api_post '/api/v1/grants', {'identity' => BUILD, 'scope' => 'widget', 'actions' => ['publish']}
+    assert_equal 204, last_response.status
+    header 'Authorization', 'Bearer admin-fixture'
+    get '/api/v1/grants', {'scope' => 'widget'}
+    assert_equal 200, last_response.status
+    grant_id = body.fetch('grants').first.fetch('id')
+    api_post '/api/v1/services/widget/releases', release, 'build-fixture'
+    assert_equal 200, last_response.status
+    header 'Authorization', 'Bearer admin-fixture'
+    delete '/api/v1/grants/invalid'
+    assert_equal 422, last_response.status
+    delete "/api/v1/grants/#{grant_id}"
+    assert_equal 204, last_response.status
+    api_post '/api/v1/services/widget/releases', release(['new-tag']), 'build-fixture'
+    assert_equal 403, last_response.status
+  end
+
+  def test_assembly_requires_a_long_session_secret
+    ENV['SHORT_TEST_SESSION_SECRET'] = 'short'
+    error = assert_raises(ReleaseMirror::Error) { ReleaseMirror::App.assemble(config.merge('sessionSecretEnv' => 'SHORT_TEST_SESSION_SECRET'), catalogue: store) }
+    assert_equal 500, error.status
+  ensure
+    ENV.delete('SHORT_TEST_SESSION_SECRET')
+  end
+
+  def test_local_fixture_origin_uses_fixture_content_security_policy
+    boundary = ReleaseMirror::Boundary.new(->(_env) { [200, {}, []] }, config.merge('publicUrl' => 'http://localhost:9292'))
+    env = Rack::MockRequest.env_for('http://localhost:9292/health')
+    env['HTTP_HOST'] = 'localhost:9292'
+    status, headers, = boundary.call(env)
+    assert_equal 200, status
+    assert_includes headers.fetch('content-security-policy'), "form-action 'self' http: https:"
   end
 end
