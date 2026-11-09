@@ -44,7 +44,7 @@ Keep any desired deployment protection rules on the `github-pages` environment.
 
 Documentation builds run for `docs/**` and their workflow changes. Catalogue
 verification runs its application jobs only when application inputs change.
-Its small change-detection job still concludes on every pull request, allowing
-the existing `behaviour` check to report a successful skip for docs-only work.
+Its required `behaviour` job runs on every pull request; it skips application
+test steps when only documentation changes.
 Do not make a path-filtered documentation build a required check for app-only
 pull requests: GitHub leaves omitted workflow checks pending.
