@@ -51,7 +51,13 @@ module ReleaseMirror
     end
 
     def config
-      super.tap { |document| raise 'OIDC issuer mismatch' unless document.issuer == options.issuer }
+      super.tap do |document|
+        raise 'OIDC issuer mismatch' unless document.issuer == options.issuer
+        %i[authorization_endpoint token_endpoint jwks_uri].each do |field|
+          endpoint = URI(document.public_send(field))
+          raise 'Invalid OIDC endpoint' unless endpoint.is_a?(URI::HTTPS) && endpoint.host && !endpoint.userinfo && !endpoint.fragment
+        end
+      end
     end
 
     private

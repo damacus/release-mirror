@@ -96,6 +96,22 @@ class BrowserTest < Minitest::Test
     assert_equal 401, last_response.status
   end
 
+  def test_discovery_rejects_mismatched_issuer_and_insecure_endpoints
+    begin_login # Load the lazily initialised strategy before clearing its discovery cache.
+    [
+      {issuer: 'https://wrong.example.test', authorization_endpoint: "#{ISSUER}/authorize", token_endpoint: "#{ISSUER}/token", jwks_uri: "#{ISSUER}/keys"},
+      {issuer: ISSUER, authorization_endpoint: "#{ISSUER}/authorize", token_endpoint: 'http://identity.example.test/token', jwks_uri: "#{ISSUER}/keys"}
+    ].each do |document|
+      OmniauthOidc::ConfigFetcher.clear_cache!
+      stub_request(:get, "#{ISSUER}/.well-known/openid-configuration").to_return(headers: {'Content-Type' => 'application/json'}, body: JSON.generate(document))
+      get 'https://catalogue.example.test/'
+      post 'https://catalogue.example.test/auth/oidc', {'csrf' => csrf_token}
+      assert_equal 401, last_response.status
+    end
+  ensure
+    OmniauthOidc::ConfigFetcher.clear_cache! if defined?(OmniauthOidc::ConfigFetcher)
+  end
+
   def test_first_login_is_read_only_and_cookie_cannot_authorise_api
     auth = begin_login
     provider_response(auth, subject: 'new-person')
