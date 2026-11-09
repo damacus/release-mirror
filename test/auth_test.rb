@@ -60,7 +60,7 @@ class AuthTest < Minitest::Test
   def test_authentication_does_not_imply_authorisation
     store.create_service(ADMIN, 'widget')
     different = @auth.authenticate(token(@claims.merge('repository_id' => 99)))
-    grant(BUILD, %w[add edit])
+    grant(BUILD, ['publish'])
     assert_raises(ReleaseMirror::Error) { store.publish(different, 'widget', release) }
   ensure
     store.db.disconnect

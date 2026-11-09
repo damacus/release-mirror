@@ -45,8 +45,10 @@ module ReleaseMirror
     def allowed?(identity, action, service = '*')
       return false unless identity && ACTIONS.include?(action)
       return true if @bootstrap && identity == @bootstrap
-      base = @db[:grants].where(identity.transform_keys(&:to_sym)).where(scope: ['*', service])
-      base.where(action: [action, 'admin']).count.positive?
+      base = @db[:grants].where(identity.transform_keys(&:to_sym))
+      return true if identity['kind'] == 'human' && base.where(scope: '*', action: 'admin').count.positive?
+      identity['kind'] == 'workload' && service != '*' && %w[add edit].include?(action) &&
+        base.where(scope: service, action: 'publish').count.positive?
     end
 
     def require!(identity, action, service = '*')
@@ -127,7 +129,9 @@ module ReleaseMirror
       scope = input['scope']
       Validation.service(scope) unless scope == '*'
       actions = input['actions']
-      raise Error unless actions.is_a?(Array) && !actions.empty? && actions.uniq == actions && (actions - ACTIONS).empty?
+      valid_admin = target['kind'] == 'human' && scope == '*' && actions == ['admin']
+      valid_publisher = target['kind'] == 'workload' && scope != '*' && actions == ['publish']
+      raise Error unless valid_admin || valid_publisher
       @db.transaction(mode: :immediate) do
         require!(identity, 'admin', scope)
         raise Error.new('Not found', 404) unless scope == '*' || exists?(scope)

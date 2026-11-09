@@ -9,7 +9,7 @@ Hosted dependency updaters need public container release metadata without access
 - Add a Ruby/Sinatra service with SQLite persistence, anonymous JSON reads and a browser dashboard in the first version.
 - Mirror actual upstream tags exactly. Producers choose when to submit successful builds; the catalogue introduces no versions, build numbers, classifications, aliases or retention policy.
 - Accept only bounded, validated release fields, discarding private portions of optional image references before persistence or diagnostics.
-- Authenticate workload publishing through trusted OIDC issuers and humans through OIDC login or validated API access tokens. Apply explicit global or service grants with separate add, edit, delete and administration permissions.
+- Authenticate workload publishing through trusted OIDC issuers and humans through OIDC login or validated API access tokens. Grant human global administrators and service-scoped workload publishers explicitly.
 - Delete release entries from the live catalogue without tombstones or release-body history. Normal backup restoration restores the prior catalogue state.
 - Provide a language-neutral HTTP/OpenAPI contract, import/export format, executable acceptance tests, portable container, publisher example and demonstrated Renovate version/digest integration.
 
