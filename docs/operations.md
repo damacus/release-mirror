@@ -2,13 +2,18 @@
 
 ## Container releases
 
-A push of a version tag beginning with `v`, such as `v1.0.0`, builds and
+A push of a release tag such as `v1.0.0` or `v1.0.0-rc.1` builds and
 publishes `ghcr.io/damacus/release-mirror` for Linux amd64 and arm64. The
 workflow publishes the version tag and `sha-<full source commit SHA>` and
 reports the multi-platform manifest digest in its job summary after checking
 both architectures. Pin deployments to `ghcr.io/damacus/release-mirror@sha256:...`
 using that published digest; tags can move. Ordinary pushes, including
 documentation-only changes, do not publish images.
+
+Release tags must use `vMAJOR.MINOR.PATCH` with an optional prerelease made of
+letters, digits, dots and hyphens. Build metadata such as `+build.1` is not
+supported because container tags cannot contain `+`. Unsupported tags that
+begin with `v` fail before publishing.
 
 GitHub creates a new container package private by default. After the first
 publication, an owner must make the package public and verify anonymous pulls.
