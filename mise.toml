@@ -1,6 +1,6 @@
 [tools]
 ruby = "4.0.9"
-node = "26.13.0"
+node = "26.13.1"
 
 [tasks.test]
 run = "mise exec -- ruby -rbundler/setup -S rake test"
