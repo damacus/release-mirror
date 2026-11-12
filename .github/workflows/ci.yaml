@@ -60,7 +60,7 @@ jobs:
         run: bundle exec bundle-audit check --update
       - uses: actions/setup-node@v7.1.0
         with:
-          node-version: "26.13.0"
+          node-version: "26.13.1"
       - name: Install pinned Renovate test engine
         run: npm install --prefix /tmp/renovate --ignore-scripts --no-audit --no-fund renovate@44.222.5
       - name: Start isolated synthetic catalogue
