@@ -38,7 +38,7 @@ jobs:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1.342.0
         with:
-          ruby-version: '4.0.9'
+          ruby-version: '4.0.10'
           bundler-cache: true
       - name: Build the usage documentation
         working-directory: docs/site
