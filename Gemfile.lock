@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.9.2)
+    addressable (2.10.0)
       public_suffix (>= 2.0.2, < 8.0)
     base64 (0.3.0)
     benchmark (0.5.0)
@@ -16,7 +16,7 @@ GEM
       rexml
     drb (2.2.3)
     erubi (1.13.1)
-    hashdiff (1.2.2)
+    hashdiff (1.3.0)
     hashie (6.0.0)
       logger
     jwt (3.3.0)
@@ -118,7 +118,7 @@ GEM
     thor (1.5.0)
     tilt (2.9.0)
     tsort (0.2.0)
-    webmock (3.37.0)
+    webmock (3.39.0)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
@@ -156,7 +156,7 @@ DEPENDENCIES
   webmock (~> 3.0)
 
 CHECKSUMS
-  addressable (2.9.2) sha256=9117c7e7d6ee07230e75ce41fb9401ae55354dc654fcd0e862ba41d539e9a610
+  addressable (2.10.0) sha256=5e13b9c001adf01dd65ad6e0d2a91d2bc07885c0ff2b83f48cbcd95e08d9de62
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   benchmark (0.5.0) sha256=465df122341aedcb81a2a24b4d3bd19b6c67c1530713fd533f3ff034e419236c
   bigdecimal (4.1.3) sha256=61ebe1e5e559bdc3cc6f2c0ee7f427321fc838f59611c294356eb04d6e21cf66
@@ -166,7 +166,7 @@ CHECKSUMS
   crack (1.0.1) sha256=ff4a10390cd31d66440b7524eb1841874db86201d5b70032028553130b6d4c7e
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
   erubi (1.13.1) sha256=a082103b0885dbc5ecf1172fede897f9ebdb745a4b97a5e8dc63953db1ee4ad9
-  hashdiff (1.2.2) sha256=e2e287452b42f18d2a8d82dd48c435e214a81dbadccf49344b956842a3b9127f
+  hashdiff (1.3.0) sha256=0b6724b8f3fef3961acc09489b175698ce0b7fd22c9cc5aa559d280cc6b65649
   hashie (6.0.0) sha256=0896391e9fc7a259bfe02abbb1a026b3e142e2f464e10255261d50a0eda18e3e
   jwt (3.3.0) sha256=44cc34fbc341c148233cf66641522b4bce0dfb1ce55e8073f05c56f44f4ee546
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
@@ -217,7 +217,7 @@ CHECKSUMS
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
   tilt (2.9.0) sha256=da5735d0280bba96e9a91041bb14aee435ccad5c17b0fa519249ae543d9aa3a5
   tsort (0.2.0) sha256=9650a793f6859a43b6641671278f79cfead60ac714148aabe4e3f0060480089f
-  webmock (3.37.0) sha256=2aed7dd97f495d1246aaae479e7275c4cd8fb63b4501c5f1050bda6716665284
+  webmock (3.39.0) sha256=c74366b69b681ae2bb691f23643a73476157c1acdc56f674a8dece1b0fa0fd12
 
 RUBY VERSION
   ruby 4.0.9
