@@ -118,7 +118,7 @@ GEM
     thor (1.5.0)
     tilt (2.9.0)
     tsort (0.2.0)
-    webmock (3.41.0)
+    webmock (3.42.0)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
@@ -217,7 +217,7 @@ CHECKSUMS
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
   tilt (2.9.0) sha256=da5735d0280bba96e9a91041bb14aee435ccad5c17b0fa519249ae543d9aa3a5
   tsort (0.2.0) sha256=9650a793f6859a43b6641671278f79cfead60ac714148aabe4e3f0060480089f
-  webmock (3.41.0) sha256=9648ac9f83881790f562130d04cf54d74c4bd5e90740c519535b14da0757ee74
+  webmock (3.42.0) sha256=5479f4613b184727767b0b35e4d490b09de85caa4e04d7e5f7256917514877e2
 
 RUBY VERSION
   ruby 4.0.9
